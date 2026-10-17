@@ -1,0 +1,53 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Platform CLIs
+.vercel
+.neon
+.render
+
+# Node
+node_modules/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.cache/
+dist/
+build/
+out/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local tooling
+CLAUDE.md
+.claude/

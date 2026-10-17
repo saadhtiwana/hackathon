@@ -3,7 +3,8 @@
 ## Team
 
 - [@saadhtiwana](https://github.com/saadhtiwana)
-- _add teammates here_
+- [@abdullahxdev](https://github.com/abdullahxdev)
+- [@ahmadmustafa02](https://github.com/ahmadmustafa02)
 
 ## Layout
 

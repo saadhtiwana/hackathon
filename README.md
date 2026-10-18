@@ -1,5 +1,7 @@
 # NASCON Hackathon
 
+> Judges: start with [docs/self-check.md](docs/self-check.md) for logins and step-by-step checks.
+
 ## Team
 
 - [@saadhtiwana](https://github.com/saadhtiwana)

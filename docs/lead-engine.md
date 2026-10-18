@@ -6,7 +6,7 @@ Scope: F3.1-F3.9 and the section 7 metric definitions. Pure rules live in `backe
 
 | From | To | Trigger |
 |---|---|---|
-| (new) | unassigned | intake (web form, message, manual) |
+| (new) | unassigned | intake with a source label: `webform`, `whatsapp` or `manual` |
 | unassigned | assigned | assignment picks an Available member |
 | assigned | acknowledged | owner clicks Acknowledge or records an action |
 | assigned | assigned (new owner) | escalation (window expired) |
@@ -24,7 +24,7 @@ Scope: F3.1-F3.9 and the section 7 metric definitions. Pure rules live in `backe
 ## 2. Definitions (section 7)
 
 - **Assigned time**: `assigned_at`, the moment of the last assignment of any kind.
-- **Acknowledged**: owner clicked Acknowledge, or recorded a note, message, call log, stage change or appointment on the lead. Any of these sets `last_action_at`; the first one while `assigned` also moves the state.
+- **Acknowledged**: owner clicked Acknowledge, or recorded a note, message, call log, stage change or appointment on the lead. Activity types that count: `lead_ack`, `note`, `message`, `call_log`, `stage_change`, `appointment` (`countsAsAcknowledgement`); `assignment`, `field_edit`, `payment` and `lead_escalation` do not. Any counting action sets `last_action_at`; the first one by the owner while `assigned` also moves the state.
 - **Time to first response**: `first_acknowledged_at - first_assigned_at`, in seconds. Later reassignments do not reset it.
 - **Escalation**: reassignment with reason `ack_expired`. Manual reassignment (`manual`) and absence reassignment (`owner_unavailable`) are counted separately and never as escalations.
 - **Recovery item**: not closed, and unacknowledged past its window, or `escalation_count >= 2`, or idle for `idle_seconds`.
@@ -38,10 +38,10 @@ Scope: F3.1-F3.9 and the section 7 metric definitions. Pure rules live in `backe
 
 ## 4. Escalation chain
 
-- Levels are configured as `{level, kind, seconds, userIds?}`; kinds are `next_eligible`, `backup`, `manager`.
-- The first window uses `ack_window_seconds`; level N's `seconds` is the window given to the person escalated to at level N.
+- Levels are configured as an ordered list `escalationLevels: [{kind, userId?, seconds}]` (same shape as `/assignment-rules`); level N is entry N, starting at 1. Kinds are `next_eligible`, `backup`, `manager`; `backup` and `manager` name one `userId`. Add more entries for more levels.
+- The first window uses `ack_window_seconds` (level 0); level N's `seconds` is the window given to the person escalated to at level N.
 - `next_eligible`: next eligible member after the current owner (id order, wrapping), skipping anyone who already owned the lead.
-- `backup` / `manager`: first designated user who is Available and not the current owner; exempt from `max_open_leads`.
+- `backup` / `manager`: the designated user, if Available and not the current owner; exempt from `max_open_leads`.
 - A level with no target is skipped; the next level is tried. The current owner is never the target.
 - No target at any remaining level: the lead is stuck, owner is cleared, and it appears in the recovery queue for a manager.
 - Windows are in seconds, so 30-second windows are valid.
@@ -49,7 +49,7 @@ Scope: F3.1-F3.9 and the section 7 metric definitions. Pure rules live in `backe
 ## 5. Owner goes On leave / Offline
 
 - Unacknowledged leads: reassigned immediately (reason `owner_unavailable`, owner excluded from the pick, fresh window).
-- Already-acknowledged leads (F3.6 policy): stay with the owner, are flagged "owner away" on the lead and in lists, enter the recovery queue after `idle_seconds` with reason `idle` (text notes owner away), and a manager can reassign them.
+- Already-acknowledged leads (F3.6 policy, `acknowledgedOnLeavePolicy: "keep_flag_recover"`, returned by `/assignment-rules` so the UI can show it): stay with the owner, are flagged "owner away" on the lead and in lists, enter the recovery queue after `idle_seconds` with reason `idle` (text notes owner away), and a manager can reassign them.
 - Flag is cleared when the owner returns to Available or Busy.
 - Busy changes nothing for existing leads; it only stops new ones.
 

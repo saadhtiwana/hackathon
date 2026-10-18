@@ -23,3 +23,13 @@ backend/    API / server, deployed to Render
 | Database | Neon     | Postgres. Branch `main` for production, `dev` for local and preview work.                        |
 
 Secrets live in Vercel, Render and GitHub Actions settings. Never commit `.env` files.
+
+## Live URLs
+
+| Part | URL |
+| ---- | --- |
+| API (Render, free) | https://relay-api-s6yw.onrender.com |
+| Health | https://relay-api-s6yw.onrender.com/health |
+| Web (Vercel) | https://hackathon.vercel.app |
+
+The free API instance sleeps when idle; an external cron pings `/health` and `/internal/tick`.

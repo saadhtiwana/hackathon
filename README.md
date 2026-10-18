@@ -30,7 +30,7 @@ Secrets live in Vercel, Render and GitHub Actions settings. Never commit `.env` 
 | ---- | --- |
 | API (Render, free) | https://relay-api-s6yw.onrender.com |
 | Health | https://relay-api-s6yw.onrender.com/health |
-| Web (Vercel) | https://hackathon.vercel.app |
+| Web (Vercel) | https://relay-nascon.vercel.app |
 
 The free API instance sleeps when idle; an external cron pings `/health` and `/internal/tick`.
 

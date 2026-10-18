@@ -154,9 +154,10 @@ export async function setAvailability(actor: AuthContext, userId: string, status
     await tx.update(memberships).set({ availability: status, availabilityChangedAt: new Date() }).where(eq(memberships.id, target.membershipId));
     if (target.availability !== status) {
       await audit.record(tx, { workspaceId: actor.workspaceId, actorId: actor.userId, action: 'availability.changed', targetType: 'user', targetId: userId, before: { availability: target.availability }, after: { availability: status } });
-      await leadHooks.onAvailabilityChange(tx, { workspaceId: actor.workspaceId, userId, status });
+      const r = await leadHooks.onAvailabilityChange(tx, { workspaceId: actor.workspaceId, userId, status, actorId: actor.userId });
+      if (r) return { status, reassigned: r.reassigned, flaggedAway: r.flaggedAway };
     }
-    return { status };
+    return { status, reassigned: 0, flaggedAway: 0 };
   }).then((r) => {
     realtime.publish(actor.workspaceId, { type: 'availability.changed', ids: { userId } });
     return r;

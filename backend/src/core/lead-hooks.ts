@@ -7,7 +7,7 @@ export interface LeadHooks {
   createLead(tx: Tx, i: { workspaceId: string; contactId: string; source: 'webform' | 'whatsapp' | 'manual'; opportunityId?: string }): Promise<unknown>;
   acknowledge(tx: Tx, i: { leadId: string; actorId: string }): Promise<unknown>;
   onActivity(tx: Tx, i: { leadId: string; actorId: string | null; type: string }): Promise<void>;
-  onAvailabilityChange(tx: Tx, i: { workspaceId: string; userId: string; status: Availability }): Promise<{ reassigned: number; flaggedAway: number } | void>;
+  onAvailabilityChange(tx: Tx, i: { workspaceId: string; userId: string; status: Availability; actorId?: string | null }): Promise<{ reassigned: number; flaggedAway: number } | void>;
   sweep(now: Date): Promise<{ escalated: number; recovered: number }>;
   reassign(tx: Tx, i: { leadId: string; toUserId: string; actorId: string }): Promise<unknown>;
   recoveryQueue(workspaceId: string, viewer: { userId: string; canSeeAll: boolean }): Promise<unknown[]>;

@@ -1,0 +1,19 @@
+/* Homepage only: smooth scroll, reveal-on-scroll and the hand-off animation. Everything respects reduced motion. */
+html:has(.home) { scroll-behavior: smooth; }
+.home [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1); transition-delay: var(--d, 0s); }
+.home [data-reveal].in { opacity: 1; transform: none; }
+.home .ring { transition: stroke-dashoffset 1s linear; }
+.home .baton { transition: left 0.9s cubic-bezier(0.65, 0, 0.25, 1); }
+.home .node { transition: background-color 0.4s, border-color 0.4s, transform 0.4s; }
+.home .marquee { animation: marquee 38s linear infinite; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.home .float { animation: float 7s ease-in-out infinite; }
+@keyframes pulseDot { 0% { box-shadow: 0 0 0 0 rgba(229, 72, 42, 0.45); } 100% { box-shadow: 0 0 0 10px rgba(229, 72, 42, 0); } }
+.home .pulse { animation: pulseDot 1.8s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  html:has(.home) { scroll-behavior: auto; }
+  .home [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .home .marquee, .home .float, .home .pulse { animation: none; }
+  .home .ring, .home .baton, .home .node { transition: none; }
+}

@@ -1,385 +1,308 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Calendar, Clock, Inbox, LifeBuoy, Mail, Wallet } from "lucide-react";
-import { RelayMark } from "@/components/brand/relay-mark";
+import { ArrowRight, BellRing, CalendarCheck, CreditCard, Inbox, LayoutDashboard, Mail, ScrollText, ShieldCheck, Users } from "lucide-react";
+import { Lockup } from "@/components/brand/logo";
+import { useMe } from "@/components/session";
 import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { StatTile } from "@/components/ui/stat-tile";
 import { cn } from "@/lib/cn";
+import "./home.css";
 
-const WINDOW = 4 * 60 + 12;
+// Fade-and-rise when a block scrolls into view. One observer for the page.
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll<HTMLElement>(".home [data-reveal]");
+    if (!("IntersectionObserver" in window)) {
+      els.forEach((e) => e.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => e.isIntersecting && (e.target.classList.add("in"), io.unobserve(e.target))),
+      { threshold: 0.15, rootMargin: "0px 0px -6% 0px" },
+    );
+    els.forEach((e) => io.observe(e));
+    return () => io.disconnect();
+  }, []);
+}
 
-function useLeadClock() {
+const PEOPLE = [
+  { id: "p1", name: "Ahmad Mustafa", role: "Next available" },
+  { id: "p2", name: "Abdullah Khan", role: "Backup" },
+  { id: "p3", name: "Saad Hayat", role: "Manager" },
+];
+const WINDOW = 9; // demo seconds per level; real windows are whatever you configure
+
+// The idea in one loop: a lead sits with exactly one person, the clock runs, and if nobody acts it is passed on, then stops at the last level.
+function HandoffDemo() {
+  const [level, setLevel] = useState(0);
   const [left, setLeft] = useState(WINDOW);
-  const [moved, setMoved] = useState(false);
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (media.matches) return;
-    let remaining = WINDOW;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) return;
+    let l = 0;
+    let t = WINDOW;
     let hold = 0;
     const id = window.setInterval(() => {
-      if (remaining > 0) {
-        remaining -= 1;
-        hold = 0;
-        setMoved(false);
-        setLeft(remaining);
+      if (hold > 0) {
+        hold -= 1;
+        if (hold === 0) {
+          l = 0;
+          t = WINDOW;
+          setDone(false);
+          setLevel(0);
+          setLeft(WINDOW);
+        }
         return;
       }
-      hold += 1;
-      setMoved(true);
-      setLeft(0);
-      if (hold >= 3) {
-        remaining = WINDOW;
-        hold = 0;
-        setMoved(false);
+      t -= 1;
+      if (t > 0) return void setLeft(t);
+      if (l < 2) {
+        l += 1;
+        t = WINDOW;
+        setLevel(l);
         setLeft(WINDOW);
+      } else {
+        setLeft(0);
+        setDone(true);
+        hold = 4;
       }
     }, 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  return { left, moved, ratio: left / WINDOW };
-}
-
-function clock(total: number) {
-  const minutes = Math.floor(total / 60);
-  const seconds = total % 60;
-  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-}
-
-function Glass({
-  className,
-  delay = "0s",
-  children,
-}: {
-  className?: string;
-  delay?: string;
-  children: React.ReactNode;
-}) {
+  const C = 2 * Math.PI * 22;
+  const pos = ["8%", "50%", "92%"][level];
   return (
-    <div
-      className={cn("home-float rounded-2xl border border-border bg-surface p-3.5 text-text shadow-raised", className)}
-      style={{ animationDelay: delay }}
-    >
-      {children}
-    </div>
-  );
-}
+    <div className="float relative mx-auto w-full max-w-[520px] rounded-2xl border border-border bg-surface p-5 shadow-[0_30px_80px_-30px_rgba(23,20,15,0.25)] sm:p-6" aria-label="Animated example: a lead is handed to the next person when nobody acknowledges it">
+      <div className="flex items-center justify-between text-[12px] text-text-muted">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-muted px-2.5 py-1 font-medium text-text">
+          <Mail className="size-3.5" aria-hidden /> New lead · Email
+        </span>
+        <span className="tabular-nums">just now</span>
+      </div>
+      <h3 className="mt-4 text-[20px] leading-tight font-semibold tracking-[-0.01em]">Property enquiry</h3>
+      <p className="mt-1 text-[14px] text-text-muted">Interested in a 10 Marla house in DHA Phase 2, budget 3.5 crore.</p>
 
-export function HomePage() {
-  const { left, moved, ratio } = useLeadClock();
-  const owner = moved ? "Ahmad" : "Hira";
-  const time = clock(left);
-
-  return (
-    <>
-      <header className="sticky top-0 z-40 border-b border-border bg-canvas/85 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1120px] items-center gap-3 px-4 sm:px-6">
-          <Link href="/" aria-label="Relay" className="flex h-9 items-center gap-2.5 rounded-md px-1 text-[16px] font-semibold tracking-tight hover:bg-surface-hover">
-            <RelayMark size={30} />
-            Relay
-          </Link>
-          <nav aria-label="Page" className="ml-4 hidden items-center gap-6 text-[14px] text-text-muted md:flex">
-            <a href="#desk" className="hover:text-text">
-              The desk
-            </a>
-            <a href="#how" className="hover:text-text">
-              How it works
-            </a>
-          </nav>
-          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
-            <Link href="/login" className="inline-flex h-10 items-center rounded-full px-3 text-[14px] font-medium text-text-muted hover:bg-surface-hover hover:text-text">
-              Log in
-            </Link>
-            <Link href="/signup" className="inline-flex h-10 items-center rounded-full bg-text px-4 text-[14px] font-medium text-canvas hover:opacity-90">
-              Create a workspace
-            </Link>
+      <div className="mt-5 flex items-center justify-between gap-4 rounded-xl bg-surface-muted p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <Avatar name={PEOPLE[level]!.name} id={PEOPLE[level]!.id} size="lg" />
+          <div className="min-w-0">
+            <p className="text-[12px] text-text-muted">Owner right now</p>
+            <p className="truncate text-[15px] font-semibold">{PEOPLE[level]!.name}</p>
           </div>
         </div>
-      </header>
-
-      <section className="relative mx-3 mt-3 overflow-hidden rounded-[28px] border border-border bg-[#f4f1ea] sm:mx-4 lg:mx-6" aria-labelledby="home-title">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,253,248,0.95),transparent_58%)]" />
-        <div className="relative z-10 mx-auto max-w-[760px] px-5 pt-16 text-center sm:pt-20">
-          <p className="text-[13px] font-medium tracking-wide text-text-muted">For teams who answer customers</p>
-          <h1 id="home-title" className="mt-4 text-[clamp(40px,6.4vw,76px)] leading-[1.02] font-semibold tracking-[-0.04em]">
-            Every lead has one owner
-          </h1>
-          <p className="mx-auto mt-5 max-w-[520px] text-[16px] leading-relaxed text-text-muted sm:text-[18px]">
-            A clock starts when the lead arrives. If nobody answers, Relay moves it and emails the next person.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/signup" className="inline-flex h-11 items-center rounded-full bg-text px-5 text-[14px] font-medium text-canvas hover:opacity-90">
-              Create a workspace
-            </Link>
-            <a href="#desk" className="inline-flex h-11 items-center rounded-full border border-border-strong bg-surface px-5 text-[14px] font-medium text-text hover:bg-surface-hover">
-              See the desk
-            </a>
-          </div>
+        <div className="relative size-14 shrink-0" role="timer" aria-label={`${left} seconds left to acknowledge`}>
+          <svg viewBox="0 0 52 52" className="size-14 -rotate-90">
+            <circle cx="26" cy="26" r="22" fill="none" stroke="var(--border-strong)" strokeWidth="3" />
+            <circle className="ring" cx="26" cy="26" r="22" fill="none" stroke={done ? "var(--text-muted)" : "var(--logo-b)"} strokeWidth="3" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - left / WINDOW)} />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center font-mono text-[12px] font-semibold tabular-nums">{`0:${String(left).padStart(2, "0")}`}</span>
         </div>
+      </div>
 
-        <div className="relative z-10 mx-auto mt-12 w-full max-w-[440px] px-4">
-          <LeadCard time={time} owner={owner} moved={moved} ratio={ratio} />
-        </div>
-
-        <Glass className="absolute top-[42%] left-[4%] z-20 hidden w-[240px] xl:block" delay="-1.2s">
-          <div className="flex items-center gap-3">
-            <Avatar name="Ayesha Khan" id="ayesha-khan" size={40} />
-            <span>
-              <span className="block text-[13px] font-medium">Ayesha Khan</span>
-              <span className="block text-[12px] text-text-muted">Emailed the agency</span>
-            </span>
-          </div>
-          <p className="mt-3 text-[13px] leading-snug">Looking at the F-7 plot this week.</p>
-        </Glass>
-
-        <Glass className="absolute top-[38%] right-[4%] z-20 hidden w-[220px] xl:block" delay="-3s">
-          <div className="flex items-center gap-2 text-[12px] font-medium text-text-muted">
-            <Mail className="size-3.5" aria-hidden />
-            Just arrived
-          </div>
-          <p className="mt-2 text-[15px] font-semibold tracking-tight">New lead, source Email</p>
-          <p className="mt-1 text-[12px] text-text-muted">Matched to Ayesha, assigned to {owner}.</p>
-        </Glass>
-
-        <Glass className="absolute bottom-[12%] left-[6%] z-20 hidden w-[230px] xl:block" delay="-4.5s">
-          <div className="flex items-center gap-3">
-            <Avatar name={owner} id={owner.toLowerCase()} size={36} status={moved ? "busy" : "available"} />
-            <span>
-              <span className="block text-[13px] font-medium">{moved ? "Passed to Ahmad" : "Hira owns this"}</span>
-              <span className="block text-[12px] text-text-muted">{moved ? "Hira did not answer" : "Available · one open lead"}</span>
-            </span>
-          </div>
-        </Glass>
-
-        <Glass className="absolute right-[5%] bottom-[14%] z-20 hidden w-[230px] xl:block" delay="-2.2s">
-          <div className="flex items-center gap-2 text-[12px] font-medium text-tint-green-text">
-            <Calendar className="size-3.5" aria-hidden />
-            Visit held
-          </div>
-          <p className="mt-2 text-[15px] font-semibold tracking-tight">Thursday, 4:30pm</p>
-          <p className="mt-1 text-[12px] text-text-muted">On Hira’s calendar. No double booking.</p>
-        </Glass>
-
-        <ul className="relative z-10 mx-auto mt-4 grid max-w-[440px] grid-cols-1 gap-3 px-4 pb-8 sm:grid-cols-2 xl:hidden">
-          <li className="rounded-2xl border border-border bg-surface p-3.5 text-text shadow-raised">
-            <div className="flex items-center gap-2.5">
-              <Avatar name="Ayesha Khan" id="ayesha-khan" size={32} />
-              <span className="text-[13px] font-medium">Ayesha emailed</span>
-            </div>
-          </li>
-          <li className="rounded-2xl border border-border bg-surface p-3.5 text-text shadow-raised">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={owner} id={owner.toLowerCase()} size={32} status={moved ? "busy" : "available"} />
-              <span className="text-[13px] font-medium">{moved ? "Passed to Ahmad" : "Hira owns it"}</span>
-            </div>
-          </li>
-        </ul>
-
-        <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 px-5 pt-2 pb-8 text-[13px] text-text-muted">
-          <span className="inline-flex items-center gap-1.5">
-            <Mail className="size-3.5" aria-hidden /> Gmail
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Calendar className="size-3.5" aria-hidden /> Google Calendar
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Wallet className="size-3.5" aria-hidden /> Stripe
-          </span>
-        </div>
-      </section>
-
-      <section id="desk" className="scroll-mt-20 px-3 py-16 sm:px-4 lg:px-6 lg:py-24">
-        <div className="mx-auto max-w-[680px] text-center">
-          <h2 className="text-[clamp(32px,4vw,48px)] leading-[1.08] font-semibold tracking-[-0.035em]">If nobody answers, it moves.</h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-text-muted">
-            The same desk your team already uses. One owner, the time left, and the reason a lead changed hands.
-          </p>
-        </div>
-
-        <div className="mx-auto mt-12 max-w-[1080px] rounded-[28px] border border-border bg-[#f4f1ea] px-3 py-8 sm:px-6 sm:py-10 lg:px-10">
-          <DeskPreview time={time} owner={owner} moved={moved} />
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-[1080px] items-center gap-8 px-4 pb-8 sm:px-6 lg:grid-cols-2 lg:gap-14 lg:pb-16">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[28px]">
-          <Image src="/home/record-still.jpg" alt="A cream envelope and a brass key on a pale wooden table in morning light" fill className="object-cover" sizes="(min-width: 1024px) 50vw, 100vw" />
-        </div>
-        <div>
-          <h2 className="text-[clamp(28px,3vw,40px)] leading-[1.12] font-semibold tracking-[-0.035em]">The record stays in one place.</h2>
-          <p className="mt-4 text-[16px] leading-relaxed text-text-muted">
-            The email that opened the lead, the person who owns it, the visit on their calendar, and the payment link all sit on the same contact. Nobody goes hunting through another tool.
-          </p>
-        </div>
-      </section>
-
-      <section id="how" className="scroll-mt-20 mx-auto max-w-[1080px] px-4 py-16 sm:px-6 lg:py-24">
-        <h2 className="text-[clamp(28px,3vw,40px)] font-semibold tracking-[-0.035em]">How a lead moves</h2>
-        <ol className="mt-10 grid gap-px overflow-hidden rounded-[20px] border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
-          {steps.map((step, index) => (
-            <li key={step.title} className="bg-surface p-6">
-              <span className="text-[12px] font-medium text-accent-text tabular-nums">0{index + 1}</span>
-              <h3 className="mt-3 text-[16px] font-semibold tracking-tight">{step.title}</h3>
-              <p className="mt-2 text-[14px] leading-relaxed text-text-muted">{step.body}</p>
+      <div className="relative mt-6 pb-2">
+        <div className="absolute top-[22px] right-[8%] left-[8%] h-px bg-border-strong" aria-hidden />
+        <span className="baton absolute top-[18px] z-10 h-[9px] w-7 -translate-x-1/2 rounded-full bg-[var(--logo-b)]" style={{ left: pos }} aria-hidden />
+        <ol className="relative grid grid-cols-3">
+          {PEOPLE.map((p, i) => (
+            <li key={p.id} className="flex flex-col items-center gap-2 text-center">
+              <span className={cn("node flex size-11 items-center justify-center rounded-full border bg-surface", i === level ? "border-text" : i < level ? "border-border bg-surface-muted opacity-60" : "border-border")}>
+                <Avatar name={p.name} id={p.id} size="md" />
+              </span>
+              <span className="text-[12px] leading-tight">
+                <span className={cn("block font-medium", i === level ? "text-text" : "text-text-muted")}>{p.name.split(" ")[0]}</span>
+                <span className="block text-[11px] text-text-muted">{p.role}</span>
+              </span>
             </li>
           ))}
         </ol>
-      </section>
-
-      <section className="mx-auto grid max-w-[1080px] gap-4 px-4 pb-20 sm:px-6 lg:grid-cols-5 lg:pb-28">
-        <div className="flex min-h-[320px] items-end rounded-[28px] border border-border bg-[#f4f1ea] p-8 lg:col-span-2">
-          <p className="text-[26px] leading-[1.2] font-semibold tracking-[-0.03em]">
-            One owner.
-            <br />
-            One clock.
-            <br />
-            Then it moves.
-          </p>
-        </div>
-        <ul className="grid gap-4 lg:col-span-3">
-          {moments.map((item) => (
-            <li key={item.title} className="flex items-center gap-4 rounded-[20px] border border-border bg-surface p-4 shadow-raised">
-              <Avatar name={item.who} id={item.who} size={44} status={item.status} />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[14px] font-medium">{item.title}</span>
-                <span className="block text-[13px] text-text-muted">{item.body}</span>
-              </span>
-              <Badge tone={item.tone}>{item.badge}</Badge>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-[1120px] flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <p className="flex items-center gap-2.5 text-[14px] font-semibold">
-            <RelayMark size={28} />
-            Relay
-          </p>
-          <p className="text-[13px] text-text-muted">Every inbound lead has one accountable owner.</p>
-          <div className="flex gap-4 text-[13px]">
-            <Link href="/login" className="text-text-muted hover:text-text">
-              Log in
-            </Link>
-            <Link href="/signup" className="font-medium text-accent-text hover:underline">
-              Create a workspace
-            </Link>
-          </div>
-        </div>
-      </footer>
-    </>
-  );
-}
-
-function LeadCard({ time, owner, moved, ratio }: { time: string; owner: string; moved: boolean; ratio: number }) {
-  return (
-    <div className="rounded-[24px] bg-surface p-5 text-left text-text shadow-raised sm:p-6">
-      <div className="flex items-center gap-3">
-        <Avatar name="Ayesha Khan" id="ayesha-khan" size={44} />
-        <span className="min-w-0">
-          <span className="block truncate text-[15px] font-semibold">Ayesha Khan</span>
-          <span className="block text-[13px] text-text-muted">Plot enquiry · Email</span>
-        </span>
-        <Badge tone={moved ? "signal" : "warn"} className="ml-auto">
-          {moved ? "Escalated" : "Waiting"}
-        </Badge>
       </div>
-      <p className="mt-5 text-[14px] leading-relaxed text-text-muted">“Looking at the F-7 plot this week. Can someone call me back?”</p>
-      <div className="mt-5 flex items-end justify-between gap-4">
-        <div>
-          <p className={cn("text-[56px] leading-none font-semibold tracking-[-0.04em] tabular-nums", moved ? "text-danger" : "text-accent-text")} aria-hidden>
-            {time}
-          </p>
-          <p className="mt-2 text-[13px] text-text-muted">{moved ? "Window ended. Moving the lead." : "left to acknowledge"}</p>
-        </div>
-        <span className="mb-1 inline-flex items-center gap-2 text-[13px] font-medium">
-          <Avatar name={owner} id={owner.toLowerCase()} size={28} status={moved ? "busy" : "available"} />
-          {owner}
-        </span>
-      </div>
-      <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface-muted" aria-hidden>
-        <div className={cn("h-full rounded-full", moved ? "bg-danger" : "bg-accent")} style={{ width: `${Math.max(ratio * 100, moved ? 0 : 4)}%` }} />
-      </div>
-      <p className="sr-only" aria-live="polite">
-        {moved ? `Acknowledgement window ended. Lead passed to ${owner}.` : "Ayesha Khan is waiting to be acknowledged."}
+      <p className="mt-3 text-center text-[12px] text-text-muted" aria-live="polite">
+        {done ? "End of the chain: it stays with the manager, nothing is lost." : level === 0 ? "One owner. The clock is running." : "Not acknowledged in time, so it moved on."}
       </p>
     </div>
   );
 }
 
-function DeskPreview({ time, owner, moved }: { time: string; owner: string; moved: boolean }) {
+function Section({ id, eyebrow, title, children, className }: { id?: string; eyebrow: string; title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="rounded-[20px] border border-border bg-canvas p-3 sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3 px-1">
-        <p className="text-[14px] font-semibold">Leads</p>
-        <p className="text-[12px] text-text-muted">Sample desk · the first clock is live</p>
-      </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="New today" value="12" icon={Inbox} tint="violet" />
-        <StatTile label="Waiting" value={moved ? "2" : "3"} icon={Clock} tint="yellow" />
-        <StatTile label="Recovery" value="1" icon={LifeBuoy} tint="pink" />
-        <StatTile label="Collected" value="4" icon={Wallet} tint="green" hint="this month" />
-      </div>
-      <ul className="mt-3 overflow-hidden rounded-xl border border-border bg-surface">
-        <li className={cn("flex flex-wrap items-center gap-3 px-4 py-3.5 transition-colors", moved && "bg-tint-yellow")}>
-          <Avatar name="Ayesha Khan" id="ayesha-khan" size={36} />
-          <span className="min-w-[140px] flex-1">
-            <span className="block text-[14px] font-medium">Ayesha Khan</span>
-            <span className="block text-[12px] text-text-muted">Plot enquiry · Email</span>
-          </span>
-          <span className="inline-flex items-center gap-2 text-[13px]">
-            <Avatar name={owner} id={owner.toLowerCase()} size={24} status={moved ? "busy" : "available"} />
-            {owner}
-          </span>
-          <span className={cn("ml-auto text-[14px] font-semibold tabular-nums", moved ? "text-danger" : "text-accent-text")}>{moved ? "Moved" : time}</span>
-        </li>
-        <li className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3.5">
-          <Avatar name="Bilal Raza" id="bilal-raza" size={36} />
-          <span className="min-w-[140px] flex-1">
-            <span className="block text-[14px] font-medium">Bilal Raza</span>
-            <span className="block text-[12px] text-text-muted">Site visit · Form</span>
-          </span>
-          <span className="inline-flex items-center gap-2 text-[13px]">
-            <Avatar name="Ahmad" id="ahmad" size={24} status="available" />
-            Ahmad
-          </span>
-          <Badge tone="ok" className="ml-auto">
-            Acknowledged
-          </Badge>
-        </li>
-        <li className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-3.5">
-          <Avatar name="Noor Ahmed" id="noor-ahmed" size={36} />
-          <span className="min-w-[140px] flex-1">
-            <span className="block text-[14px] font-medium">Noor Ahmed</span>
-            <span className="block text-[12px] text-text-muted">Payment link · Email</span>
-          </span>
-          <span className="inline-flex items-center gap-2 text-[13px]">
-            <Avatar name="Sana" id="sana" size={24} status="busy" />
-            Sana
-          </span>
-          <Badge tone="accent" className="ml-auto">
-            Link sent
-          </Badge>
-        </li>
-      </ul>
-    </div>
+    <section id={id} className={cn("mx-auto w-full max-w-[1120px] scroll-mt-20 px-5 py-20 sm:px-8 sm:py-28", className)}>
+      <p data-reveal className="text-[13px] font-medium text-text-muted">{eyebrow}</p>
+      <h2 data-reveal style={{ "--d": "0.05s" } as React.CSSProperties} className="mt-3 max-w-[22ch] text-[clamp(30px,4.4vw,48px)] leading-[1.08] font-semibold tracking-[-0.03em]">{title}</h2>
+      <div className="mt-12">{children}</div>
+    </section>
   );
 }
 
-const steps = [
-  { title: "It arrives", body: "A customer emails the agency address, or fills the public form. An unknown sender becomes a contact and a lead." },
-  { title: "One owner", body: "Assignment gives it to one available person. Two people never own it at the same time." },
-  { title: "The clock", body: "The time left to acknowledge is on the lead. The owner can see it. So can everyone else." },
-  { title: "It moves", body: "If the window ends, the lead goes to the next person and they get an email with the reason." },
+const STEPS = [
+  { n: "01", title: "A lead arrives", body: "From your web form, a customer email to your agency address, or typed in by hand. Each one carries its source." },
+  { n: "02", title: "One person owns it", body: "Round-robin among people who are Available and under their limit. On leave, busy or offline means no leads, and you see why." },
+  { n: "03", title: "A visible clock starts", body: "The owner gets an email and a countdown on screen. Acknowledging, or doing anything on the lead, stops it." },
+  { n: "04", title: "Nobody answers? It moves", body: "Next available person, then a backup, then a manager, with the time you set for each level. It stops at the last level and never goes ownerless." },
 ];
 
-const moments: { who: string; title: string; body: string; badge: string; tone: "ok" | "accent" | "warn"; status: "available" | "busy" }[] = [
-  { who: "Hira", title: "Hira acknowledged Ayesha", body: "The clock stopped. The lead stays with her.", badge: "Acknowledged", tone: "ok", status: "available" },
-  { who: "Ahmad", title: "Thursday 4:30 is on Ahmad’s calendar", body: "Busy times are checked before the visit is booked.", badge: "Booked", tone: "accent", status: "busy" },
-  { who: "Sana", title: "Sana sent Noor a payment link", body: "The link goes out by email. Card numbers stay with Stripe.", badge: "Link sent", tone: "warn", status: "available" },
+const FEATURES = [
+  { icon: Users, title: "Exactly one owner", body: "Two people can never own the same lead, and two timers can never escalate it twice." },
+  { icon: BellRing, title: "Alerts that land", body: "Escalations arrive as real email with a link straight to the lead, plus an in-app bell." },
+  { icon: Inbox, title: "A real inbox", body: "Customer email becomes a conversation. Reply from Relay and it leaves in the same thread." },
+  { icon: CreditCard, title: "Get paid", body: "Create a Stripe checkout link from the contact, email it, and watch the status flip to Paid on its own." },
+  { icon: CalendarCheck, title: "Book on real calendars", body: "See busy times, avoid clashes, and the customer gets a Google Calendar invite." },
+  { icon: ScrollText, title: "A trail nobody can edit", body: "Who did what, when, with before and after values. The database itself refuses edits and deletes." },
+  { icon: ShieldCheck, title: "Roles you control", body: "Hide deal values from people who should not see them, enforced on the server, not just in the screen." },
+  { icon: LayoutDashboard, title: "Numbers that match", body: "Every figure on the dashboard opens the exact records it counted." },
 ];
+
+const TIMELINE = [
+  ["Email received", "Property enquiry from Rare Gaming Legacy", "10:12"],
+  ["Assigned to Ahmad Mustafa", "Round-robin, countdown started", "10:12"],
+  ["Escalated to Abdullah Khan", "Level 1, window expired", "10:12"],
+  ["Acknowledged by Abdullah Khan", "First response 0:28", "10:13"],
+  ["Visit booked", "Tomorrow 12:00, customer invited", "10:20"],
+  ["Payment received", "Rs 25,000, confirmed by Stripe", "10:41"],
+];
+
+export function HomePage() {
+  useReveal();
+  const me = useMe();
+  const signedIn = me.isSuccess;
+
+  return (
+    <div className="home bg-canvas text-text">
+      <header className="sticky top-0 z-30 border-b border-border/70 bg-canvas/80 backdrop-blur-md">
+        <div className="mx-auto flex h-14 w-full max-w-[1120px] items-center justify-between px-5 sm:px-8">
+          <Link href="/" aria-label="Relay home"><Lockup size={26} textClassName="text-[18px]" /></Link>
+          <nav aria-label="Main" className="hidden items-center gap-7 text-[14px] text-text-muted md:flex">
+            <a href="#how" className="hover:text-text">How it works</a>
+            <a href="#features" className="hover:text-text">Features</a>
+            <a href="#record" className="hover:text-text">One record</a>
+          </nav>
+          <div className="flex items-center gap-2">
+            {signedIn ? (
+              <Link href="/dashboard" className="inline-flex h-9 items-center rounded-lg bg-text px-3.5 text-[13px] font-medium text-canvas hover:opacity-90">Open dashboard</Link>
+            ) : (
+              <>
+                <Link href="/login" className="hidden h-9 items-center rounded-lg px-3 text-[13px] font-medium text-text-muted hover:text-text sm:inline-flex">Sign in</Link>
+                <Link href="/signup" className="inline-flex h-9 items-center rounded-lg bg-text px-3.5 text-[13px] font-medium text-canvas hover:opacity-90">Get started</Link>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <div className="mx-auto grid w-full max-w-[1120px] items-center gap-14 px-5 pt-16 pb-12 sm:px-8 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-24">
+          <div>
+            <p data-reveal className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[12px] text-text-muted">
+              <span className="pulse size-1.5 rounded-full bg-[var(--logo-b)]" aria-hidden /> Built for service teams of 5 to 30
+            </p>
+            <h1 data-reveal style={{ "--d": "0.06s" } as React.CSSProperties} className="mt-6 text-[clamp(40px,7vw,76px)] leading-[1.02] font-semibold tracking-[-0.04em]">
+              Every lead has
+              <br />
+              exactly one owner.
+            </h1>
+            <p data-reveal style={{ "--d": "0.12s" } as React.CSSProperties} className="mt-6 max-w-[46ch] text-[clamp(16px,1.6vw,19px)] leading-relaxed text-text-muted">
+              Relay hands each inbound lead to one accountable person, starts a countdown everyone can see, and passes it on automatically when it is dropped. Nothing goes quiet.
+            </p>
+            <div data-reveal style={{ "--d": "0.18s" } as React.CSSProperties} className="mt-9 flex flex-wrap items-center gap-3">
+              <Link href={signedIn ? "/dashboard" : "/signup"} className="group inline-flex h-12 items-center gap-2 rounded-xl bg-text px-6 text-[15px] font-medium text-canvas hover:opacity-90">
+                {signedIn ? "Open your dashboard" : "Create your workspace"}
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+              </Link>
+              {signedIn ? null : (
+                <Link href="/login" className="inline-flex h-12 items-center rounded-xl border border-border bg-surface px-5 text-[15px] font-medium hover:bg-surface-hover">Sign in</Link>
+              )}
+            </div>
+            <p data-reveal style={{ "--d": "0.24s" } as React.CSSProperties} className="mt-5 text-[13px] text-text-muted">Works with Gmail, Stripe and Google Calendar.</p>
+          </div>
+          <div data-reveal style={{ "--d": "0.15s" } as React.CSSProperties}>
+            <HandoffDemo />
+          </div>
+        </div>
+
+        <div className="border-y border-border bg-surface-muted/50">
+          <div className="mx-auto grid w-full max-w-[1120px] gap-px px-5 py-10 text-center sm:grid-cols-3 sm:px-8">
+            {[
+              ["1", "accountable owner at any moment"],
+              ["3", "levels of escalation, each with its own timer"],
+              ["0", "leads left without a person"],
+            ].map(([n, l], i) => (
+              <div key={n} data-reveal style={{ "--d": `${i * 0.08}s` } as React.CSSProperties} className="py-4">
+                <p className="text-[clamp(40px,5vw,60px)] leading-none font-semibold tracking-[-0.04em] tabular-nums">{n}</p>
+                <p className="mx-auto mt-2 max-w-[24ch] text-[14px] text-text-muted">{l}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <Section id="how" eyebrow="How it works" title="From first message to a handled lead">
+          <ol className="grid gap-x-10 gap-y-12 md:grid-cols-2">
+            {STEPS.map((s, i) => (
+              <li key={s.n} data-reveal style={{ "--d": `${(i % 2) * 0.08}s` } as React.CSSProperties} className="border-t border-border pt-5">
+                <span className="font-mono text-[13px] text-text-muted">{s.n}</span>
+                <h3 className="mt-2 text-[20px] font-semibold tracking-[-0.015em]">{s.title}</h3>
+                <p className="mt-2 max-w-[44ch] text-[15px] leading-relaxed text-text-muted">{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </Section>
+
+        <Section id="features" eyebrow="Everything in one place" title="The tools around the lead, already connected" className="pt-8 sm:pt-12">
+          <ul className="grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((f, i) => (
+              <li key={f.title} data-reveal style={{ "--d": `${(i % 4) * 0.05}s` } as React.CSSProperties} className="group bg-surface p-6 hover:bg-surface-hover">
+                <f.icon className="size-5 text-text-muted transition-colors group-hover:text-text" aria-hidden />
+                <h3 className="mt-5 text-[16px] font-semibold tracking-[-0.01em]">{f.title}</h3>
+                <p className="mt-1.5 text-[14px] leading-relaxed text-text-muted">{f.body}</p>
+              </li>
+            ))}
+          </ul>
+        </Section>
+
+        <Section id="record" eyebrow="One customer record" title="Every step lands on the same timeline">
+          <div className="grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+            <p data-reveal className="max-w-[40ch] text-[16px] leading-relaxed text-text-muted">
+              The email, who owned it and when, the escalation, the visit and the payment all sit on one contact page. When someone asks what happened, the answer is one scroll away.
+            </p>
+            <ol className="rounded-2xl border border-border bg-surface p-2 sm:p-3">
+              {TIMELINE.map(([t, d, time], i) => (
+                <li key={t} data-reveal style={{ "--d": `${i * 0.06}s` } as React.CSSProperties} className="flex items-start gap-4 rounded-xl px-3 py-3 hover:bg-surface-hover">
+                  <span className="mt-1.5 size-2 shrink-0 rounded-full bg-text" aria-hidden />
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[14px] font-medium">{t}</span>
+                    <span className="block text-[13px] text-text-muted">{d}</span>
+                  </span>
+                  <span className="font-mono text-[12px] text-text-muted tabular-nums">{time}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </Section>
+
+        <section className="mx-auto w-full max-w-[1120px] px-5 pb-24 sm:px-8 sm:pb-32">
+          <div data-reveal className="rounded-3xl bg-text px-6 py-16 text-center text-canvas sm:px-12 sm:py-20">
+            <h2 className="mx-auto max-w-[18ch] text-[clamp(30px,4.6vw,52px)] leading-[1.06] font-semibold tracking-[-0.03em]">Stop losing leads to silence.</h2>
+            <p className="mx-auto mt-4 max-w-[44ch] text-[16px] text-canvas/70">Set up your workspace, connect Gmail, and the next enquiry already has an owner.</p>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link href={signedIn ? "/dashboard" : "/signup"} className="inline-flex h-12 items-center rounded-xl bg-canvas px-6 text-[15px] font-medium text-text hover:opacity-90">{signedIn ? "Open dashboard" : "Create your workspace"}</Link>
+              {signedIn ? null : <Link href="/login" className="inline-flex h-12 items-center rounded-xl border border-canvas/25 px-5 text-[15px] font-medium hover:bg-canvas/10">Sign in</Link>}
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5 py-8 text-[13px] text-text-muted sm:px-8">
+          <Lockup size={22} textClassName="text-[15px]" />
+          <p>Built for NASCON. Every lead, one owner.</p>
+          <nav aria-label="Footer" className="flex gap-5">
+            <Link href="/login" className="hover:text-text">Sign in</Link>
+            <Link href="/signup" className="hover:text-text">Create workspace</Link>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  );
+}

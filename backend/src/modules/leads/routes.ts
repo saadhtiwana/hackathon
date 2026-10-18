@@ -13,7 +13,7 @@ export interface RouterOptions {
 
 const uuid = z.uuid();
 const status = z.enum(['unassigned', 'assigned', 'acknowledged', 'closed']);
-const source = z.enum(['webform', 'whatsapp', 'manual']);
+const source = z.enum(['webform', 'whatsapp', 'manual', 'email']);
 const limit = z.coerce.number().int().min(1).max(200).default(50);
 const cursor = z.string().max(200).optional();
 

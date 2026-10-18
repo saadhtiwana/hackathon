@@ -1,4 +1,4 @@
-export type ProviderId = 'stripe' | 'discord' | 'google_calendar' | 'email';
+export type ProviderId = 'stripe' | 'google_calendar' | 'email' | 'email_alerts' | 'discord';
 export type DbProvider = 'stripe' | 'discord' | 'google' | 'gmail';
 
 export interface AdapterContext {

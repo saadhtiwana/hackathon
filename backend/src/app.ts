@@ -23,6 +23,9 @@ import { googleRouter } from './modules/integrations/google/routes.js';
 import { notificationsRouter } from './modules/integrations/google/alerts.js';
 import { appointmentsRouter } from './modules/appointments/routes.js';
 import './modules/conversations/email.js';
+import { dashboardRouter } from './modules/dashboard/routes.js';
+import { auditRouter } from './modules/audit/routes.js';
+import { savedListsRouter } from './modules/savedlists/routes.js';
 
 export function createApp() {
   const app = express();
@@ -59,6 +62,9 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(dashboardRouter);
+  api.use(auditRouter);
+  api.use(savedListsRouter);
   api.use(googleRouter);
   api.use(notificationsRouter);
   api.use(appointmentsRouter);

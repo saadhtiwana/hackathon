@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-plex-mono",
 });
 
 const themeBoot = `(function(){try{var t=localStorage.getItem("relay-theme");var r=document.documentElement;if(t==="dark")r.classList.add("dark");else if(t==="light")r.classList.add("light");}catch(e){}})();`;
@@ -23,8 +17,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} h-full antialiased`} suppressHydrationWarning>
-      <body className="min-h-full bg-paper text-ink">
+    <html lang="en" className={`${sans.variable} h-full antialiased`} suppressHydrationWarning>
+      <body className="min-h-full bg-canvas text-text">
         <script dangerouslySetInnerHTML={{ __html: themeBoot }} />
         <a
           href="#content"

@@ -1,66 +1,217 @@
 @import "tailwindcss";
 
+/*
+  Design tokens. New names are the source of truth; the older names (paper, wash, ink, line,
+  signal, ok, warn) are aliases so every existing class keeps working.
+  Text pairs checked for WCAG AA (4.5:1). text-faint is for placeholders and decoration only.
+*/
 :root,
 .light {
-  --paper: #ffffff;
+  --canvas: #fbfbfa;
   --surface: #ffffff;
-  --wash: #f6f7f9;
-  --ink: #16171a;
-  --ink-muted: #6b7078;
-  --line: #e6e8ec;
-  --accent: #2563eb;
+  --surface-muted: #f3f3f1;
+  --surface-hover: #f0f0ee;
+  --border: #ebebe8;
+  --border-strong: #dcdcd8;
+  --text: #1f1f1e;
+  --text-muted: #686761;
+  --text-faint: #8c8b86;
+
+  --accent: #5b5bf6;
+  --accent-hover: #4d4de8;
   --on-accent: #ffffff;
-  --signal: #d92d20;
-  --on-signal: #ffffff;
-  --ok: #107a45;
-  --warn: #b25e09;
-  --focus: #2563eb;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px -8px rgba(16, 24, 40, 0.14);
+  --accent-soft: #eeeefd;
+  --accent-text: #4343c9;
+
+  --tint-green: #e7f4eb;
+  --tint-green-text: #1c5a35;
+  --tint-blue: #e7effb;
+  --tint-blue-text: #1e4a8c;
+  --tint-yellow: #faf2da;
+  --tint-yellow-text: #674a08;
+  --tint-pink: #fae9ef;
+  --tint-pink-text: #872350;
+  --tint-violet: #eeecfb;
+  --tint-violet-text: #4a3ea6;
+
+  --status-available: #22a55b;
+  --status-busy: #e5a019;
+  --status-away: #8792a2;
+  --status-offline: #b9b8b3;
+  --danger: #d1342b;
+  --on-danger: #ffffff;
+  --ok-text: #1b7a43;
+  --warn-text: #93600a;
+
+  --focus: #5b5bf6;
+  --shadow-raised: 0 1px 2px rgba(20, 20, 18, 0.04), 0 6px 20px -8px rgba(20, 20, 18, 0.1);
+  --overlay: rgba(20, 20, 18, 0.28);
   color-scheme: light;
 }
 
 .dark {
-  --paper: #101114;
-  --surface: #17181c;
-  --wash: #1b1c21;
-  --ink: #ececef;
-  --ink-muted: #9a9ea8;
-  --line: #2a2c33;
-  --accent: #5b8cff;
-  --on-accent: #0b0c10;
-  --signal: #ff6b5e;
-  --on-signal: #101114;
-  --ok: #4cc38a;
-  --warn: #e5a443;
-  --focus: #7ea2ff;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
+  --canvas: #191919;
+  --surface: #202020;
+  --surface-muted: #262626;
+  --surface-hover: #2a2a2a;
+  --border: #2e2e2e;
+  --border-strong: #3a3a3a;
+  --text: #ededeb;
+  --text-muted: #a3a29d;
+  --text-faint: #7a7975;
+
+  --accent: #5b5bf6;
+  --accent-hover: #6b6bf8;
+  --on-accent: #ffffff;
+  --accent-soft: #26264a;
+  --accent-text: #9c9cff;
+
+  --tint-green: #1e2d23;
+  --tint-green-text: #a8ddb9;
+  --tint-blue: #1d2534;
+  --tint-blue-text: #afc8f2;
+  --tint-yellow: #2e2918;
+  --tint-yellow-text: #ebd493;
+  --tint-pink: #33212a;
+  --tint-pink-text: #f0b3ca;
+  --tint-violet: #262338;
+  --tint-violet-text: #c3bdf6;
+
+  --status-available: #3fbf73;
+  --status-busy: #e8b04f;
+  --status-away: #8a94a6;
+  --status-offline: #6b6a66;
+  --danger: #ff7b70;
+  --on-danger: #191919;
+  --ok-text: #5fcb8c;
+  --warn-text: #e8b04f;
+
+  --focus: #8b8bff;
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+  --overlay: rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
+/* aliases for the original token names */
+:root,
+.light,
+.dark {
+  --paper: var(--canvas);
+  --wash: var(--surface-muted);
+  --ink: var(--text);
+  --ink-muted: var(--text-muted);
+  --line: var(--border);
+  --signal: var(--danger);
+  --on-signal: var(--on-danger);
+  --ok: var(--ok-text);
+  --warn: var(--warn-text);
+  --shadow: var(--shadow-raised);
+}
+
 @theme inline {
-  --color-paper: var(--paper);
+  --color-canvas: var(--canvas);
   --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-text: var(--accent-text);
+  --color-tint-green: var(--tint-green);
+  --color-tint-green-text: var(--tint-green-text);
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-blue-text: var(--tint-blue-text);
+  --color-tint-yellow: var(--tint-yellow);
+  --color-tint-yellow-text: var(--tint-yellow-text);
+  --color-tint-pink: var(--tint-pink);
+  --color-tint-pink-text: var(--tint-pink-text);
+  --color-tint-violet: var(--tint-violet);
+  --color-tint-violet-text: var(--tint-violet-text);
+  --color-status-available: var(--status-available);
+  --color-status-busy: var(--status-busy);
+  --color-status-away: var(--status-away);
+  --color-status-offline: var(--status-offline);
+  --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
+
+  /* original names */
+  --color-paper: var(--paper);
   --color-wash: var(--wash);
   --color-ink: var(--ink);
   --color-muted: var(--ink-muted);
   --color-line: var(--line);
-  --color-accent: var(--accent);
-  --color-on-accent: var(--on-accent);
   --color-signal: var(--signal);
   --color-on-signal: var(--on-signal);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-focus: var(--focus);
+
   --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  /* numbers stay in Inter; .font-mono only switches on tabular figures */
+  --font-mono: var(--font-inter), "Inter", system-ui, sans-serif;
+
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
-  --shadow-float: var(--shadow);
+  --radius-xl: 14px;
+  --shadow-float: var(--shadow-raised);
+  --shadow-raised: var(--shadow-raised);
+
+  --spacing-1: 4px;
+  --spacing-2: 8px;
+  --spacing-3: 12px;
+  --spacing-4: 16px;
+  --spacing-6: 24px;
+  --spacing-8: 32px;
+
+  --ease-calm: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade-in: fade-in 180ms var(--ease-calm) both;
+  --animate-row-in: row-in 220ms var(--ease-calm) both;
+  --animate-pop-in: pop-in 180ms var(--ease-calm) both;
+  --animate-toast-in: toast-in 200ms var(--ease-calm) both;
+  --animate-shimmer: shimmer 1.6s ease-in-out infinite;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes row-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 150% 0;
+    }
+    to {
+      background-position: -50% 0;
+    }
+  }
 }
 
 * {
-  border-color: var(--line);
+  border-color: var(--border);
 }
 
 html,
@@ -69,38 +220,65 @@ body {
 }
 
 body {
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--canvas);
+  color: var(--text);
   font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.45;
+  line-height: 1.5;
   letter-spacing: -0.006em;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
 h1,
-h2 {
-  letter-spacing: -0.025em;
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+.font-mono,
+.tabular,
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+a,
+button,
+input,
+select,
+textarea,
+[role="button"] {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-calm);
 }
 
 :focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
+  border-radius: 6px;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--focus) 24%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+::placeholder {
+  color: var(--text-faint);
 }
 
 [cmdk-overlay] {
   position: fixed;
   inset: 0;
-  background: color-mix(in srgb, var(--ink) 40%, transparent);
+  background: var(--overlay);
 }
 
-.tabular {
-  font-variant-numeric: tabular-nums;
+/* soft shimmer for skeletons; a flat tone when motion is reduced */
+.shimmer {
+  background-color: var(--surface-muted);
+  background-image: linear-gradient(90deg, transparent 0%, var(--surface-hover) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -108,6 +286,7 @@ h2 {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

@@ -1,11 +1,5 @@
-import { Placeholder } from "@/features/placeholder";
+import { LeadsInbox } from "@/features/leads/inbox";
 
 export default function LeadsPage() {
-  return (
-    <Placeholder
-      title="Leads"
-      description="One owner, one countdown, one next step."
-      body="Leads from the web form, WhatsApp, and manual entry will list here with the time left to acknowledge."
-    />
-  );
+  return <LeadsInbox />;
 }

@@ -1,11 +1,5 @@
-import { Placeholder } from "@/features/placeholder";
+import { CompaniesPage } from "@/features/crm/companies-page";
 
-export default function CompaniesPage() {
-  return (
-    <Placeholder
-      title="Companies"
-      description="The organisations your contacts belong to."
-      body="Company records and the people attached to them will list here."
-    />
-  );
+export default function Page() {
+  return <CompaniesPage />;
 }

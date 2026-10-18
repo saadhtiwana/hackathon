@@ -14,7 +14,6 @@ import { getAdapter, listAdapters } from './registry.js';
 import { consentUrl, googleConfigured, signState } from './google/oauth.js';
 import { userCalendarStore } from './google/tokens.js';
 import { revokeToken } from './google/oauth.js';
-import { gateways } from './discord/gateway.js';
 
 const mask = (last4: string | null) => (last4 ? `••••${last4}` : null);
 
@@ -75,14 +74,13 @@ export async function listIntegrations(a: AuthContext) {
       };
     }
     const row = rows.find((r) => r.provider === ad.dbProvider);
-    const account = ad.id === 'email' && row?.encryptedConfig ? (() => { try { return JSON.parse(decrypt(row.encryptedConfig!)).email ?? null; } catch { return null; } })() : undefined;
+    const mailbox = (ad.id === 'email' || ad.id === 'email_alerts') && row?.encryptedConfig ? (() => { try { const t = JSON.parse(decrypt(row.encryptedConfig!)); return { account: t.email ?? null, agencyAddress: t.agencyEmail ?? null }; } catch { return null; } })() : undefined;
     return {
-      ...(account !== undefined ? { account } : {}),
+      ...(mailbox ? mailbox : {}),
       provider: ad.id, label: ad.label, perUser: false,
       status: row?.status ?? 'not_connected',
       lastOkAt: row?.lastOkAt ?? null, lastErrorAt: row?.lastErrorAt ?? null, lastError: row?.lastError ?? null,
       secretMasked: mask(row?.secretLast4 ?? null), recentErrors, limits: lim,
-      ...(ad.id === 'discord' ? { gatewayOnline: gateways.isOnline(ws) } : {}),
     };
   });
 }

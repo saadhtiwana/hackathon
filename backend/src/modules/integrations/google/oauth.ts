@@ -61,6 +61,9 @@ export interface GoogleTokens {
   email?: string;
   scope?: string;
   historyId?: string;
+  // Mailbox only: the plus-address customers write to, and when the mailbox was connected.
+  agencyEmail?: string;
+  connectedAt?: number;
 }
 
 async function tokenCall(params: Record<string, string>) {
@@ -99,4 +102,11 @@ export async function refreshAccess(t: GoogleTokens): Promise<GoogleTokens> {
 
 export async function revokeToken(token: string) {
   await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST', signal: AbortSignal.timeout(10_000) }).catch(() => {});
+}
+
+// ahmad@gmail.com + workspace slug "margalla-estates" -> ahmad+margalla@gmail.com
+export function agencyAddressFor(mailbox: string, workspaceSlug: string): string {
+  const [local, domain] = mailbox.toLowerCase().split('@');
+  const tag = (workspaceSlug.split('-')[0] || 'agency').replace(/[^a-z0-9]/g, '');
+  return `${(local ?? '').split('+')[0]}+${tag}@${domain}`;
 }

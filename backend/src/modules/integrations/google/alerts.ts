@@ -7,13 +7,12 @@ import { audit } from '../../../core/audit/index.js';
 import { env } from '../../../core/env.js';
 import { asyncHandler, unprocessable } from '../../../core/errors.js';
 import { integrationEvents } from '../../../core/integration-events/index.js';
-import { logger } from '../../../core/logger.js';
 import { outbox, type OutboxJob } from '../../../core/outbox/index.js';
 import { requireAuth } from '../../../core/auth/sessions.js';
 import { requirePermission } from '../../../core/rbac/index.js';
 import { ProviderError } from '../errors.js';
-import { discordConfig } from '../discord/config.js';
-import { discordAssigned, discordEscalation, listAlerts } from '../discord/alerts.js';
+import { agencyAddress } from '../../conversations/email.js';
+import { listAlerts } from '../discord/alerts.js';
 import { profile, sendEmail } from './gmail.js';
 import { mailboxStore } from './tokens.js';
 
@@ -48,7 +47,8 @@ async function emailAlert(job: OutboxJob, type: Type) {
     const tokens = await store.load();
     if (!tokens) return void (await record('error', 'not delivered: the agency mailbox is not connected'));
     const from = tokens.email ?? (await profile(store)).emailAddress;
-    const sent = await sendEmail(store, { from, to, subject, body });
+    const reply = await agencyAddress(ws);
+    const sent = await sendEmail(store, { from, to, subject, body, replyTo: reply });
     await record('ok', undefined, sent.id);
   } catch (e) {
     const pe = e instanceof ProviderError ? e : new ProviderError('Unexpected problem sending the alert', true, 'unexpected');
@@ -57,13 +57,9 @@ async function emailAlert(job: OutboxJob, type: Type) {
   }
 }
 
-// Email is the primary alert channel; Discord is attempted too when it is connected and linked, and never blocks the email.
-const both = (type: Type, discord: (j: OutboxJob) => Promise<void>) => async (job: OutboxJob) => {
-  if (await discordConfig(job.workspaceId)) await discord(job).catch((e) => logger.warn('discord alert skipped', { err: e instanceof Error ? e.message : String(e) }));
-  await emailAlert(job, type);
-};
-outbox.registerHandler('notify.escalation', both('alert.escalation', discordEscalation));
-outbox.registerHandler('notify.lead_assigned', both('alert.lead_assigned', discordAssigned));
+// Alerts go out by email from the agency mailbox.
+outbox.registerHandler('notify.escalation', (job) => emailAlert(job, 'alert.escalation'));
+outbox.registerHandler('notify.lead_assigned', (job) => emailAlert(job, 'alert.lead_assigned'));
 
 export const notificationsRouter = Router();
 

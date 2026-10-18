@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../../core/db/client.js';
-import { integrationConnections, memberships, userConnections, users } from '../../../core/db/schema/index.js';
+import { integrationConnections, memberships, userConnections, users, workspaces } from '../../../core/db/schema/index.js';
 import { audit } from '../../../core/audit/index.js';
 import { encrypt } from '../../../core/crypto/index.js';
 import { env } from '../../../core/env.js';
@@ -11,7 +11,8 @@ import { integrationEvents } from '../../../core/integration-events/index.js';
 import { logger } from '../../../core/logger.js';
 import { requirePermission } from '../../../core/rbac/index.js';
 import { ProviderError } from '../errors.js';
-import { consentUrl, exchangeCode, signState, verifyState, type Purpose } from './oauth.js';
+import { agencyAddress } from '../../conversations/email.js';
+import { agencyAddressFor, consentUrl, exchangeCode, signState, verifyState, type Purpose } from './oauth.js';
 
 const back = (qs: Record<string, string>) => `${env.APP_URL.replace(/\/$/, '')}/settings/integrations?${new URLSearchParams(qs)}`;
 const TTL = { link: 24 * 3600_000, session: 15 * 60_000 };
@@ -71,6 +72,9 @@ googleRouter.get('/integrations/google/callback', async (req, res) => {
       });
     } else {
       const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, state.u));
+      const [wsRow] = await db.select({ slug: workspaces.slug }).from(workspaces).where(eq(workspaces.id, ws));
+      tokens.connectedAt = Date.now();
+      if (tokens.email) tokens.agencyEmail = agencyAddressFor(tokens.email, wsRow?.slug ?? '');
       const values = { workspaceId: ws, provider: 'gmail' as const, status: 'connected' as const, encryptedConfig: encrypt(JSON.stringify(tokens)), secretLast4: null, lastOkAt: new Date(), lastError: null, updatedAt: new Date() };
       await db.transaction(async (tx) => {
         await tx.insert(integrationConnections).values(values).onConflictDoUpdate({ target: [integrationConnections.workspaceId, integrationConnections.provider], set: values });
@@ -85,6 +89,13 @@ googleRouter.get('/integrations/google/callback', async (req, res) => {
     res.redirect(302, back({ google: 'error', reason: msg }));
   }
 });
+
+// Public: where customers can email the agency, shown under the web form.
+googleRouter.get('/public/agency-contact/:slug', asyncHandler(async (req, res) => {
+  const [w] = await db.select({ id: workspaces.id }).from(workspaces).where(eq(workspaces.slug, String(req.params.slug)));
+  const email = w ? await agencyAddress(w.id) : null;
+  res.json({ email });
+}));
 
 // Calendar connection status for every member (I3.7).
 googleRouter.get('/integrations/google/users', requirePermission('crm.view'), asyncHandler(async (req, res) => {

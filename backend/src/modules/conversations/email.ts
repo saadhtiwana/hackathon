@@ -1,6 +1,6 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../../core/db/client.js';
-import { contacts, conversations, integrationConnections, messages, workspaces } from '../../core/db/schema/index.js';
+import { contacts, conversations, integrationConnections, integrationEvents as eventsTable, messages, workspaces } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { integrationEvents } from '../../core/integration-events/index.js';
 import { leadHooks } from '../../core/lead-hooks.js';
@@ -8,7 +8,8 @@ import { logger } from '../../core/logger.js';
 import { outbox, type OutboxJob } from '../../core/outbox/index.js';
 import { realtime } from '../../core/realtime/index.js';
 import { emailAdapter } from '../integrations/google/adapter.js';
-import { getHeaders, getMessage, newMessageIds, profile, recentInboxIds, sendEmail, type ParsedEmail } from '../integrations/google/gmail.js';
+import { getHeaders, getMessage, listForAddress, profile, sendEmail, type ParsedEmail } from '../integrations/google/gmail.js';
+import { agencyAddressFor, type GoogleTokens } from '../integrations/google/oauth.js';
 import { mailboxStore } from '../integrations/google/tokens.js';
 import { ProviderError } from '../integrations/errors.js';
 import { markError, markOk } from '../integrations/service.js';
@@ -19,9 +20,14 @@ const CHANNEL = 'email';
 // ---- inbound: poll the agency mailbox ----
 
 async function handleInbound(ws: string, mailbox: string, m: ParsedEmail): Promise<'stored' | 'duplicate' | 'ignored'> {
-  if (m.from === mailbox || m.labels.includes('SENT') || !m.from) return 'ignored';
-  const rec = await integrationEvents.recordInbound({ workspaceId: ws, provider: 'gmail', type: 'email.message', externalId: m.id, result: 'ok', ref: m.threadId });
+  // The Gmail query already limits this to mail delivered to the agency address; people become customers, automated mail is recorded and skipped.
+  const skip =
+    m.from === mailbox || m.labels.includes('SENT') || !m.from
+      ? 'sent by the mailbox itself'
+      : m.automated;
+  const rec = await integrationEvents.recordInbound({ workspaceId: ws, provider: 'gmail', type: 'email.message', externalId: m.id, result: 'ok', ref: m.threadId, error: skip ? `ignored: ${skip}` : undefined });
   if (rec.duplicate) return 'duplicate';
+  if (skip) return 'ignored';
   try {
     const body = m.subject && !/^re:/i.test(m.subject) ? `${m.subject}\n\n${m.text}` : m.text;
     const stop = [m.subject, m.text].some((t) => t.trim().toUpperCase() === 'STOP');
@@ -49,6 +55,30 @@ async function handleInbound(ws: string, mailbox: string, m: ParsedEmail): Promi
   }
 }
 
+// The agency address and the connection time are stored with the mailbox tokens. Older connections get them filled in once.
+async function mailboxState(ws: string, store: ReturnType<typeof mailboxStore>, tokens: GoogleTokens) {
+  const mailbox = (tokens.email ?? (await profile(store)).emailAddress).toLowerCase();
+  let { agencyEmail, connectedAt } = tokens;
+  if (!agencyEmail || !connectedAt) {
+    const [w] = await db.select({ slug: workspaces.slug }).from(workspaces).where(eq(workspaces.id, ws));
+    const [first] = await db.select({ at: eventsTable.createdAt }).from(eventsTable).where(and(eq(eventsTable.workspaceId, ws), eq(eventsTable.provider, 'gmail'), eq(eventsTable.type, 'email.poll'))).orderBy(asc(eventsTable.createdAt)).limit(1);
+    agencyEmail = agencyEmail ?? agencyAddressFor(mailbox, w?.slug ?? '');
+    connectedAt = connectedAt ?? (first?.at ? +first.at : Date.now());
+    await store.save({ ...tokens, agencyEmail, connectedAt });
+  }
+  return { mailbox, agency: agencyEmail.toLowerCase(), connectedAt };
+}
+
+export async function agencyAddress(ws: string): Promise<string | null> {
+  try {
+    const store = mailboxStore(ws);
+    const t = await store.load();
+    return t ? (await mailboxState(ws, store, t)).agency : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function pollMailbox(ws: string): Promise<{ stored: number }> {
   const store = mailboxStore(ws);
   const [row] = await db.select().from(integrationConnections).where(and(eq(integrationConnections.workspaceId, ws), eq(integrationConnections.provider, 'gmail')));
@@ -56,38 +86,20 @@ export async function pollMailbox(ws: string): Promise<{ stored: number }> {
   try {
     const tokens = await store.load();
     if (!tokens) return { stored: 0 };
-    const me = (tokens.email ?? (await profile(store)).emailAddress).toLowerCase();
-    let ids: string[] = [];
-    let historyId = tokens.historyId;
-    if (!historyId) {
-      // First poll: remember where the mailbox is now; older mail is not imported.
-      historyId = (await profile(store)).historyId;
-      await store.save({ ...tokens, historyId });
-      await integrationEvents.recordOutbound({ workspaceId: ws, provider: 'gmail', type: 'email.poll', result: 'ok', ref: `baseline ${historyId}` });
-    } else {
-      try {
-        const r = await newMessageIds(store, historyId);
-        ids = r.ids;
-        historyId = r.historyId;
-      } catch (e) {
-        if (e instanceof ProviderError && e.httpStatus === 404) {
-          // History expired: fall back to the most recent inbox mail; dedupe by message id keeps this safe.
-          ids = await recentInboxIds(store);
-          historyId = (await profile(store)).historyId;
-        } else throw e;
-      }
-    }
+    const { mailbox, agency, connectedAt } = await mailboxState(ws, store, tokens);
+    // Ask Gmail only for mail delivered to the agency address since connection (deliveredto: and after:).
+    const ids = await listForAddress(store, agency, Math.floor(connectedAt / 1000));
+    const seen = ids.length ? await db.select({ id: eventsTable.externalId }).from(eventsTable).where(and(eq(eventsTable.workspaceId, ws), eq(eventsTable.provider, 'gmail'), eq(eventsTable.type, 'email.message'), inArray(eventsTable.externalId, ids))) : [];
+    const known = new Set(seen.map((r) => r.id));
     let stored = 0;
-    for (const id of ids) {
-      const msg = await getMessage(store, id);
-      if ((await handleInbound(ws, me, msg)) === 'stored') stored++;
-    }
-    if (historyId !== tokens.historyId) {
-      const fresh = (await store.load()) ?? tokens;
-      await store.save({ ...fresh, historyId });
+    let skipped = 0;
+    for (const id of ids.filter((i) => !known.has(i))) {
+      const outcome = await handleInbound(ws, mailbox, await getMessage(store, id));
+      if (outcome === 'stored') stored++;
+      else if (outcome === 'ignored') skipped++;
     }
     await store.markOk();
-    if (ids.length) await integrationEvents.recordOutbound({ workspaceId: ws, provider: 'gmail', type: 'email.poll', result: 'ok', ref: `${ids.length} new, ${stored} stored` });
+    if (stored || skipped) await integrationEvents.recordOutbound({ workspaceId: ws, provider: 'gmail', type: 'email.poll', result: 'ok', ref: `${stored} stored, ${skipped} skipped` });
     return { stored };
   } catch (e) {
     const pe = e instanceof ProviderError ? e : new ProviderError('Unexpected problem checking the mailbox', true, 'unexpected');
@@ -143,7 +155,8 @@ async function deliverEmail(job: OutboxJob) {
       const [w] = await db.select({ name: workspaces.name }).from(workspaces).where(eq(workspaces.id, ws));
       subject = `${w?.name ?? 'Your enquiry'}: message for you`;
     }
-    const sent = await sendEmail(store, { from, to: contact!.email, subject, body: m.body, threadId: convo!.externalChannelId, inReplyTo, references });
+    const { agency } = await mailboxState(ws, store, tokens);
+    const sent = await sendEmail(store, { from, to: contact!.email, subject, body: m.body, replyTo: agency, threadId: convo!.externalChannelId, inReplyTo, references });
     if (!convo!.externalChannelId) await db.update(conversations).set({ externalChannelId: sent.threadId }).where(eq(conversations.id, convo!.id));
     await setStatus(ws, m, { status: 'sent', providerSid: sent.id, errorCode: null, errorMessage: null, attempts: job.attempts });
     await integrationEvents.recordOutbound({ workspaceId: ws, provider: 'gmail', type: 'email.send', result: 'ok', ref: sent.id });

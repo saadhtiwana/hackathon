@@ -29,11 +29,11 @@ export const googleAdapter: ProviderAdapter = {
   }),
 };
 
-// The agency mailbox is the messaging channel: Twilio blocks Pakistani signups, so customers write to and hear from one Gmail account.
+// Messaging channel: customers write to the agency plus-address on the connected Gmail account.
 export const emailAdapter: ProviderAdapter = {
   id: 'email',
   dbProvider: 'gmail',
-  label: 'Email (agency Gmail)',
+  label: 'Email (Gmail): messaging',
   oauthPurpose: 'mailbox',
   async connect() {
     return { config: {}, secretLast4: null };
@@ -48,13 +48,26 @@ export const emailAdapter: ProviderAdapter = {
     if (t?.refreshToken) await revokeToken(t.refreshToken);
   },
   describeLimits: () => ({
-    summary: 'Customer messages and escalation alerts use the agency Gmail account.',
-    can: ['Turn incoming emails into contacts and leads', 'Reply in the same email thread from the platform', 'Email employees when a lead escalates', 'Email a payment link to a customer'],
+    summary: 'Customers email the agency address; replies are sent from the connected Gmail account in the same thread.',
+    can: ['Turn emails sent to the agency address into contacts and leads (source: Email)', 'Reply in the same email thread from the platform, with replies coming back to the agency address', 'Email a payment link to a customer', 'Stop messaging a contact who replies STOP'],
     cannot: [
-      'Twilio blocks Pakistani signups, so messaging uses the agency Gmail account instead of WhatsApp or SMS',
-      'The inbox is checked every 30 seconds; there is no instant push, so replies can take up to half a minute to appear',
+      'Only mail delivered to the agency address is read; the rest of the mailbox, newsletters, no-reply senders and automatic mail are ignored',
+      'The inbox is checked every 30 seconds; there is no instant push, so a new email can take up to half a minute to appear',
       'Email shows sent or failed only, with no delivery or read receipts',
+      'Twilio blocks Pakistani signups (error 0x07) and Telegram is blocked in Pakistan, so WhatsApp, SMS and Telegram are not used',
       'The Google app is in Testing mode: only listed test users can connect, and refresh tokens may expire after 7 days',
     ],
+  }),
+};
+
+// Notifications channel: same mailbox, shown separately so admins can see alert delivery on its own.
+export const emailAlertsAdapter: ProviderAdapter = {
+  ...emailAdapter,
+  id: 'email_alerts',
+  label: 'Email alerts: notifications',
+  describeLimits: () => ({
+    summary: 'When a lead escalates or is assigned, the new owner is emailed from the agency mailbox.',
+    can: ['Email the new owner with the lead, its source, the escalation reason, the level and a link', 'Use each employee\'s own alert address, defaulting to their account email', 'Retry a failed alert up to 5 times and show failures to admins'],
+    cannot: ['Alerts need the agency mailbox to be connected', 'An employee can turn escalation alerts off in their notification settings', 'Alerts arrive as email, so they are as fast as the recipient\'s mail app'],
   }),
 };

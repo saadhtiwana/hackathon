@@ -12,6 +12,9 @@ export interface ParsedEmail {
   messageIdHeader: string | null;
   at: Date;
   labels: string[];
+  // Set when this is not a person writing: bulk mail, notifications, bounces, auto-replies.
+  automated: string | null;
+  deliveredTo: string[];
 }
 
 const b64 = (s: string) => Buffer.from(s, 'base64url').toString('utf8');
@@ -42,11 +45,24 @@ export function parseFrom(raw: string) {
   return { addr, name };
 }
 
+const NOREPLY = /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|notifications?|notify|mailer-daemon|postmaster|bounces?|alerts?|newsletter|updates?|support-noreply)([+._-].*)?$/i;
+
+export function automatedReason(addr: string, h: Array<{ name: string; value: string }>): string | null {
+  const local = addr.split('@')[0] ?? '';
+  if (NOREPLY.test(local)) return `sender ${addr} is a no-reply or notification address`;
+  if (header(h, 'List-Unsubscribe') || header(h, 'List-Id')) return 'bulk mail (List-Unsubscribe)';
+  const auto = header(h, 'Auto-Submitted');
+  if (auto && auto.toLowerCase() !== 'no') return `auto-generated mail (Auto-Submitted: ${auto})`;
+  const prec = header(h, 'Precedence');
+  if (prec && /bulk|list|junk/i.test(prec)) return `bulk mail (Precedence: ${prec})`;
+  return null;
+}
+
 export async function getMessage(store: TokenStore, id: string): Promise<ParsedEmail> {
   const m = await googleFetch<any>(store, `${G}/messages/${id}?format=full`);
   const h = m.payload?.headers ?? [];
   const { addr, name } = parseFrom(header(h, 'From') ?? '');
-  return { id: m.id, threadId: m.threadId, from: addr, fromName: name, subject: header(h, 'Subject') ?? '', text: stripQuoted(bodyOf(m.payload)), messageIdHeader: header(h, 'Message-ID') ?? header(h, 'Message-Id'), at: new Date(Number(m.internalDate ?? Date.now())), labels: m.labelIds ?? [] };
+  return { id: m.id, threadId: m.threadId, from: addr, fromName: name, subject: header(h, 'Subject') ?? '', text: stripQuoted(bodyOf(m.payload)), messageIdHeader: header(h, 'Message-ID') ?? header(h, 'Message-Id'), at: new Date(Number(m.internalDate ?? Date.now())), labels: m.labelIds ?? [], automated: automatedReason(addr, h), deliveredTo: [header(h, 'Delivered-To'), header(h, 'To'), header(h, 'Cc')].filter(Boolean).join(',').toLowerCase().split(/[\s,;<>]+/).filter((x) => x.includes('@')) };
 }
 
 export async function getHeaders(store: TokenStore, id: string) {
@@ -71,17 +87,20 @@ export async function newMessageIds(store: TokenStore, startHistoryId: string): 
   return { ids: [...ids], historyId };
 }
 
-export async function recentInboxIds(store: TokenStore): Promise<string[]> {
-  const r = await googleFetch<any>(store, `${G}/messages?labelIds=INBOX&maxResults=10`);
+// Inbox messages delivered to the agency plus-address since the mailbox was connected. The query does the filtering on Google's side.
+export async function listForAddress(store: TokenStore, address: string, afterEpochSeconds: number): Promise<string[]> {
+  const q = encodeURIComponent(`deliveredto:${address} after:${afterEpochSeconds}`);
+  const r = await googleFetch<any>(store, `${G}/messages?labelIds=INBOX&maxResults=25&q=${q}`);
   return (r.messages ?? []).map((m: any) => m.id);
 }
 
 const enc = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${Buffer.from(s).toString('base64')}?=`);
 
-export async function sendEmail(store: TokenStore, m: { from: string; to: string; subject: string; body: string; threadId?: string | null; inReplyTo?: string | null; references?: string | null }) {
+export async function sendEmail(store: TokenStore, m: { from: string; to: string; subject: string; body: string; replyTo?: string | null; threadId?: string | null; inReplyTo?: string | null; references?: string | null }) {
   const lines = [
     `From: ${m.from}`,
     `To: ${m.to}`,
+    ...(m.replyTo ? [`Reply-To: ${m.replyTo}`] : []),
     `Subject: ${enc(m.subject)}`,
     'MIME-Version: 1.0',
     'Content-Type: text/plain; charset=UTF-8',

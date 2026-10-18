@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Plug } from "lucide-react";
 import { useMe } from "@/components/session";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -10,6 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { can } from "@/lib/permissions";
 import { useIntegrations } from "./api";
+import { OAuthResult } from "./oauth-result";
 import { MissingProviderCard, ProviderCard } from "./provider-card";
 import { CalendarPeople, FailedAlerts, SyncHistory } from "./tables";
 
@@ -31,6 +33,9 @@ export function IntegrationsPage() {
     <>
       <Breadcrumbs items={[{ href: "/", label: "Desk" }, { label: "Integrations" }]} />
       <PageHeader title="Integrations" description="Payments, email and calendars: what is connected, what it can do, and what went wrong." />
+      <Suspense fallback={null}>
+        <OAuthResult />
+      </Suspense>
       {me.isSuccess && !canSee ? (
         <EmptyState icon={Plug} title="Admins only" body="You need Manage integrations or View the audit log to see this page." />
       ) : list.isLoading || me.isLoading ? (

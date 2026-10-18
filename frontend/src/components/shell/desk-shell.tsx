@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/api/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/cn";
 import { useMe } from "@/components/session";
-import { Lockup, LogoMark, WorkspaceAvatar } from "@/components/brand/logo";
+import { Lockup, LogoMark } from "@/components/brand/logo";
 import { paletteItems, primaryNav, settingsNav, type NavItem } from "@/components/shell/nav";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -44,10 +44,10 @@ async function countOpenLeads() {
   return open;
 }
 
-function Brand({ name, rail }: { name: string; rail?: boolean }) {
+function Brand({ rail }: { rail?: boolean }) {
   return (
     <div className="mb-5">
-      <Link href="/" aria-label="Relay home" className="flex h-9 items-center rounded-md px-2 hover:bg-surface-hover">
+      <Link href="/dashboard" aria-label="Relay" className="flex h-9 items-center rounded-md px-2 hover:bg-surface-hover">
         {rail ? (
           <>
             <LogoMark className="lg:hidden" />
@@ -57,10 +57,6 @@ function Brand({ name, rail }: { name: string; rail?: boolean }) {
           <Lockup />
         )}
       </Link>
-      <div className="mt-2 flex items-center gap-2 px-2" title={name}>
-        <WorkspaceAvatar name={name} />
-        <span className={cn("min-w-0 truncate text-[13px] text-text-muted", rail && "md:sr-only lg:not-sr-only")}>{name}</span>
-      </div>
     </div>
   );
 }
@@ -215,21 +211,27 @@ export function DeskShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-full bg-canvas">
       <aside className="sticky top-0 hidden h-screen w-[60px] shrink-0 flex-col border-r border-border bg-canvas px-2 py-3 md:flex lg:w-60 lg:px-3">
-        <Brand name={session.workspace.name} rail />
+        <Brand rail />
         <NavList me={session} count={count} rail />
         <UserCard me={session} status={status} rail />
       </aside>
       <Sheet open={menu} onOpenChange={setMenu} title="Navigation">
-        <Brand name={session.workspace.name} />
+        <Brand />
         <NavList me={session} count={count} onNavigate={() => setMenu(false)} />
         <UserCard me={session} status={status} />
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-1.5 border-b border-border bg-canvas px-3 sm:px-5">
-          <IconButton className="md:hidden" label="Open navigation" onClick={() => setMenu(true)}>
-            <Menu className="size-[18px]" />
-          </IconButton>
-          <CurrentTitle fallback={session.workspace.name} />
+        <header className="sticky top-0 z-20 grid h-14 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-border bg-canvas px-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <IconButton className="md:hidden" label="Open navigation" onClick={() => setMenu(true)}>
+              <Menu className="size-[18px]" />
+            </IconButton>
+            <CurrentTitle fallback={session.workspace.name} />
+          </div>
+          <p className="max-w-[34vw] truncate text-center text-[13px] font-medium sm:max-w-xs" title={session.workspace.name}>
+            {session.workspace.name}
+          </p>
+          <div className="flex items-center justify-end gap-1.5">
           <button
             type="button"
             onClick={() => setPalette(true)}
@@ -290,6 +292,7 @@ export function DeskShell({ children }: { children: React.ReactNode }) {
               Sign out
             </DropdownItem>
           </DropdownMenu>
+          </div>
         </header>
         <main id="content" className="mx-auto w-full max-w-[1200px] min-w-0 flex-1 px-4 py-7 sm:px-6 lg:px-10 lg:py-9">
           {children}

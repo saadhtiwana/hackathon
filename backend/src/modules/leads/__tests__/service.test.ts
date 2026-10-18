@@ -103,9 +103,11 @@ describe('sweep', () => {
     expect(w.state.leads.get(l.id)).toMatchObject({ ownerId: 'bk', escalationLevel: 2, ackDeadline: at(90) });
     await w.svc.sweep(at(90));
     expect(w.state.leads.get(l.id)).toMatchObject({ ownerId: 'mg', escalationLevel: 3, escalationCount: 3 });
-    // chain exhausted: the lead stays with the manager instead of becoming ownerless
-    expect(await w.svc.sweep(at(120))).toEqual({ escalated: 1, recovered: 0 });
-    expect(w.state.leads.get(l.id)).toMatchObject({ state: 'assigned', ownerId: 'mg' });
+    // chain exhausted: the lead stays with the manager, with no new assignment, timer or count
+    expect(await w.svc.sweep(at(120))).toEqual({ escalated: 0, recovered: 1 });
+    expect(w.state.leads.get(l.id)).toMatchObject({ state: 'assigned', ownerId: 'mg', ackDeadline: null, escalationCount: 3 });
+    expect(await w.svc.sweep(at(180))).toEqual({ escalated: 0, recovered: 0 });
+    expect(w.state.leads.get(l.id)).toMatchObject({ ownerId: 'mg', escalationCount: 3 });
 
     const custody = w.state.assignments.filter((a) => a.leadId === l.id).map((a) => [a.userId, a.reason, a.endReason]);
     expect(custody.slice(0, 4)).toEqual([

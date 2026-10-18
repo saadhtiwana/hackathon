@@ -94,7 +94,7 @@ export interface LeadRepo {
   // Last resort owner when nobody is eligible: the workspace Owner.
   workspaceOwner?(tx: Tx, workspaceId: string): Promise<string | null>;
   // Leads whose current owner was set by the no-eligible-employee fallback.
-  fallbackMarkers?(workspaceId: string, leadIds: string[]): Promise<Set<string>>;
+  fallbackMarkers?(workspaceId: string, leadIds: string[]): Promise<Map<string, string>>;
   member(q: DbOrTx | null, workspaceId: string, userId: string): Promise<MemberRecord | null>;
   ownerHistory(tx: Tx, leadId: string): Promise<string[]>;
   openAssignment(
@@ -300,13 +300,19 @@ export const pgLeadRepo: LeadRepo = {
   },
 
   async fallbackMarkers(workspaceId, leadIds) {
-    if (!leadIds.length) return new Set<string>();
+    if (!leadIds.length) return new Map<string, string>();
     const rows = await db
       .selectDistinctOn([activities.leadId], { leadId: activities.leadId, data: activities.data })
       .from(activities)
       .where(and(eq(activities.workspaceId, workspaceId), inArray(activities.leadId, leadIds), inArray(activities.type, ['lead_escalation', 'assignment'])))
       .orderBy(activities.leadId, desc(activities.createdAt));
-    return new Set(rows.filter((r) => (r.data as { fallback?: boolean })?.fallback === true).map((r) => r.leadId!));
+    const out = new Map<string, string>();
+    for (const r of rows) {
+      const d = r.data as { fallback?: boolean; exhausted?: boolean };
+      if (d?.exhausted) out.set(r.leadId!, 'exhausted');
+      else if (d?.fallback) out.set(r.leadId!, 'fallback');
+    }
+    return out;
   },
 
   async member(q, workspaceId, userId) {

@@ -122,6 +122,7 @@ export function createLeadService(deps: ServiceDeps) {
   }
 
   const FALLBACK_NOTE = 'No eligible employee: sent to manager';
+  const EXHAUSTED_NOTE = 'Escalated past all levels';
 
   async function assignToFallback(
     tx: Tx,
@@ -352,6 +353,32 @@ export function createLeadService(deps: ServiceDeps) {
     const lateBySeconds = Math.floor((now.getTime() - lead.ackDeadline!.getTime()) / 1000);
     const late = lateBySeconds > LATE_AFTER_SECONDS ? { note: 'escalated late after server restart', lateBySeconds } : {};
     const skipped = escalationSkips(withHistory, candidates, rr.rules, step.targetUserId);
+
+    // The chain is spent and the lead already sits with the last person in it: stop. No new assignment, timer, email or count.
+    if (!step.targetUserId) {
+      const last = await fallbackTarget(tx, lead.workspaceId, rr);
+      if (last && last.userId === lead.ownerId) {
+        const next = await write(tx, { ...lead, ackDeadline: null, escalationLevel: step.level, version: lead.version + 1 }, lead);
+        await ports.activity.record(tx, {
+          workspaceId: lead.workspaceId,
+          entity: { leadId: lead.id, contactId: lead.contactId },
+          type: 'lead_escalation',
+          actorId: null,
+          data: { fromUserId: lead.ownerId, toUserId: lead.ownerId, level: step.level, exhausted: true, note: EXHAUSTED_NOTE },
+        });
+        await ports.audit.record(tx, {
+          workspaceId: lead.workspaceId,
+          actorId: null,
+          action: 'lead.escalation_exhausted',
+          targetType: 'lead',
+          targetId: lead.id,
+          before: snapshot(lead),
+          after: { ...snapshot(next), note: EXHAUSTED_NOTE },
+        });
+        fx.push({ workspaceId: lead.workspaceId, event: { type: 'recovery.changed', ids: { leadId: lead.id } } });
+        return 'stuck';
+      }
+    }
     await repo.closeAssignment(tx, lead.id, 'escalated', now);
 
     if (!step.targetUserId) {
@@ -735,9 +762,10 @@ export function createLeadService(deps: ServiceDeps) {
       const withReasons: { lead: ListedLead; reasons: RecoveryReason[] }[] = items
         .map((lead) => ({ lead, reasons: recoveryReasons(lead, rules, now) }))
         .filter((x) => x.reasons.length > 0);
-      const fallback = (await repo.fallbackMarkers?.(workspaceId, withReasons.map((x) => x.lead.id))) ?? new Set<string>();
+      const marks = (await repo.fallbackMarkers?.(workspaceId, withReasons.map((x) => x.lead.id))) ?? new Map<string, string>();
       for (const x of withReasons) {
-        if (fallback.has(x.lead.id)) x.reasons = [{ code: 'escalated_multiple', text: FALLBACK_NOTE }, ...x.reasons.filter((r) => r.code !== 'escalated_multiple')];
+        const m = marks.get(x.lead.id);
+        if (m) x.reasons = [{ code: 'escalated_multiple', text: m === 'exhausted' ? EXHAUSTED_NOTE : FALLBACK_NOTE }, ...x.reasons.filter((r) => r.code !== 'escalated_multiple')];
       }
       return { items: withReasons, nextCursor };
     },

@@ -56,10 +56,6 @@ async function seedMargalla(passwordHash: string) {
       { name: 'Saad Hayat', email: 'saad@margallaestates.pk', role: base.owner.id },
       { name: 'Abdullah Khan', email: 'abdullah@margallaestates.pk', role: base.admin.id },
       { name: 'Ahmad Mustafa', email: 'ahmad@margallaestates.pk', role: base.user.id },
-      { name: 'Hira Malik', email: 'hira@margallaestates.pk', role: mgr!.id },
-      { name: 'Bilal Chaudhry', email: 'bilal@margallaestates.pk', role: base.user.id },
-      { name: 'Ayesha Siddiqui', email: 'ayesha@margallaestates.pk', role: base.user.id },
-      { name: 'Usman Qureshi', email: 'usman@margallaestates.pk', role: base.user.id },
     ];
     const members: Record<string, string> = {};
     for (const t of team) {
@@ -67,8 +63,10 @@ async function seedMargalla(passwordHash: string) {
       await addMember(tx, ws, u.id, t.role);
       members[t.email.split('@')[0]!] = u.id;
     }
-    await tx.update(memberships).set({ availability: 'busy' }).where(eq(memberships.userId, members.bilal!));
-    const staff = ['ahmad', 'hira', 'bilal', 'ayesha', 'usman'].map((k) => members[k]!);
+    // The demo team is exactly three people; all start Available with their own alert address.
+    const alertEmails: Record<string, string> = { saad: 'saadhayat799@gmail.com', abdullah: 'abdullahisdev@gmail.com', ahmad: 'ahmadmustafabutt.dev@gmail.com' };
+    for (const [k, mail] of Object.entries(alertEmails)) await tx.update(memberships).set({ alertEmail: mail }).where(eq(memberships.userId, members[k]!));
+    const staff = ['saad', 'abdullah', 'ahmad'].map((k) => members[k]!);
 
     // Residential Sales: reuse the default pipeline created with the workspace, then reshape its stages.
     const [defPipe] = await tx.select().from(pipelines).where(eq(pipelines.workspaceId, ws));
@@ -110,13 +108,13 @@ async function seedMargalla(passwordHash: string) {
     await tx
       .update(assignmentRules)
       .set({
-        ackWindowSeconds: 120,
-        maxOpenLeads: 15,
-        idleSeconds: 3600,
+        ackWindowSeconds: 30,
+        maxOpenLeads: 5,
+        idleSeconds: 120,
         escalationLevels: [
-          { kind: 'next_eligible', seconds: 120 },
-          { kind: 'backup', userId: members.abdullah, seconds: 120 },
-          { kind: 'manager', userId: members.hira, seconds: 180 },
+          { kind: 'next_eligible', seconds: 30 },
+          { kind: 'backup', userId: members.abdullah, seconds: 30 },
+          { kind: 'manager', userId: members.saad, seconds: 30 },
         ],
       })
       .where(eq(assignmentRules.workspaceId, ws));
@@ -185,8 +183,6 @@ async function seedKohsar(passwordHash: string) {
     const ws = workspace.id;
     const people = [
       { name: 'Sana Ahmed', email: 'sana@kohsarsolar.pk', role: base.owner.id },
-      { name: 'Raheel Anwar', email: 'raheel@kohsarsolar.pk', role: base.admin.id },
-      { name: 'Mahnoor Iqbal', email: 'mahnoor@kohsarsolar.pk', role: base.user.id },
     ];
     const ids: string[] = [];
     for (const p of people) {

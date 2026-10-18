@@ -16,6 +16,7 @@
     "connect:stripe": "tsx src/scripts/connect-stripe.ts",
     "connect:discord": "tsx src/scripts/connect-discord.ts",
     "link:google": "tsx src/scripts/google-links.ts",
+    "test:email-webhook": "tsx src/scripts/test-email-webhook.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

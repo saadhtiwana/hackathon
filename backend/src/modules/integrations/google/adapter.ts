@@ -52,7 +52,7 @@ export const emailAdapter: ProviderAdapter = {
     can: ['Turn emails sent to the agency address into contacts and leads (source: Email)', 'Reply in the same email thread from the platform, with replies coming back to the agency address', 'Email a payment link to a customer', 'Stop messaging a contact who replies STOP'],
     cannot: [
       'Only mail delivered to the agency address is read; the rest of the mailbox, newsletters, no-reply senders and automatic mail are ignored',
-      'The inbox is checked every 30 seconds; there is no instant push, so a new email can take up to half a minute to appear',
+      'Gmail is polled every 30 seconds, so a new email can take up to half a minute to appear; the signed webhook (POST /webhooks/email/<workspace id>, HMAC-SHA256) accepts forwarded mail and rejects forged or replayed requests',
       'Email shows sent or failed only, with no delivery or read receipts',
       'Twilio blocks Pakistani signups (error 0x07) and Telegram is blocked in Pakistan, so WhatsApp, SMS and Telegram are not used',
       'The Google app is in Testing mode: only listed test users can connect, and refresh tokens may expire after 7 days',

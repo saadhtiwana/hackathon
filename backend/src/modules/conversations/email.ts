@@ -8,7 +8,7 @@ import { logger } from '../../core/logger.js';
 import { outbox, type OutboxJob } from '../../core/outbox/index.js';
 import { realtime } from '../../core/realtime/index.js';
 import { emailAdapter } from '../integrations/google/adapter.js';
-import { getHeaders, getMessage, listForAddress, profile, sendEmail, type ParsedEmail } from '../integrations/google/gmail.js';
+import { automatedReason, getHeaders, getMessage, listForAddress, profile, sendEmail, type ParsedEmail } from '../integrations/google/gmail.js';
 import { agencyAddressFor, type GoogleTokens } from '../integrations/google/oauth.js';
 import { mailboxStore } from '../integrations/google/tokens.js';
 import { ProviderError } from '../integrations/errors.js';
@@ -171,3 +171,24 @@ async function deliverEmail(job: OutboxJob) {
 }
 
 outbox.registerHandler('email.send', deliverEmail);
+
+// Forwarded mail from the signed inbound webhook goes through the same path as polled mail (dedupe by message id).
+export async function ingestForwarded(ws: string, m: { id: string; from: string; fromName?: string; subject?: string; text?: string }) {
+  const store = mailboxStore(ws);
+  const tokens = await store.load();
+  const mailbox = (tokens?.email ?? '').toLowerCase();
+  const parsed: ParsedEmail = {
+    id: `fwd:${m.id}`,
+    threadId: `fwd:${m.id}`,
+    from: m.from.toLowerCase(),
+    fromName: m.fromName ?? m.from.split('@')[0]!,
+    subject: m.subject ?? '',
+    text: (m.text ?? '').slice(0, 4000),
+    messageIdHeader: null,
+    at: new Date(),
+    labels: [],
+    automated: automatedReason(m.from.toLowerCase(), []),
+    deliveredTo: [],
+  };
+  return handleInbound(ws, mailbox, parsed);
+}

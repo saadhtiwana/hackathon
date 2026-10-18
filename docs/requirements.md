@@ -42,7 +42,7 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | I1.1 | Receive messages | Saad | done |
 | I1.2 | Request authenticity | Saad | done |
 | I1.3 | Send messages | Saad | done |
-| I1.4 | Delivery status | Saad | done |
+| I1.4 | Delivery status | Saad | partial: sent and failed only, Discord has no delivery receipts |
 | I1.5 | Contact matching | Saad | done |
 | I1.6 | Ownership | Saad | done |
 | I1.7 | Failure handling | Saad | done |

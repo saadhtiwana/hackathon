@@ -203,7 +203,7 @@ docs/                api, schema, modules, lead engine, requirements, judge guid
 
 ## Known limitations
 
-Gmail is polled every 30 seconds with no delivered or read receipts, and Twilio and Telegram are not usable from Pakistan (Twilio blocks signups with error 0x07), which is why messaging uses Gmail behind an adapter. The Google app runs in Testing mode, so only listed test users can connect. Stripe is test mode only. The full list, with what works instead, is in [docs/self-check.md](docs/self-check.md#known-limitations-for-the-judging-form).
+Gmail is polled every 30 seconds with no delivered or read receipts, and Twilio and Telegram are not usable from Pakistan (Twilio blocks signups with error 0x07), which is why messaging uses Gmail behind an adapter. The Google app runs in Testing mode, so only listed test users can connect. Stripe is test mode only.
 
 ## Team
 

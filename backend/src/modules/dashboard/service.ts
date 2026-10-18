@@ -4,12 +4,15 @@ import { appointments, contacts, dashboardPrefs, leadAssignments, leads, members
 import { leadHooks } from '../../core/lead-hooks.js';
 import type { AuthContext } from '../../core/auth/context.js';
 import { forbidden } from '../../core/errors.js';
-import { collectedCents, openPipelineByStage } from '../payments/revenue.js';
+import { collectedCents, openPipelineByStage, projectedCents } from '../payments/revenue.js';
 
-export const FIGURES = ['newLeadsToday', 'pipelineValue', 'avgFirstResponse', 'recoveryQueue', 'escalations24h', 'availability', 'upcomingAppointments', 'collectedThisMonth'] as const;
+export const FIGURES = ['newLeadsToday', 'pipelineValue', 'avgFirstResponse', 'recoveryQueue', 'escalations24h', 'availability', 'upcomingAppointments', 'collectedThisMonth', 'myLeads', 'leadsTrend', 'payments', 'needsAttention'] as const;
 export type Figure = (typeof FIGURES)[number];
 
 export type Scope = 'company' | 'me';
+export type Range = 'today' | 'week' | 'month';
+
+const PAYMENT_STATUSES = ['paid', 'requested', 'expired', 'failed', 'refunded', 'partially_refunded'] as const;
 
 // Owner and Admin (or anyone allowed to reassign leads) see the company; everyone else sees their own desk (F5.4).
 export const canSeeCompany = (a: AuthContext) => a.baseLevel !== 'user' || a.permissions.has('leads.reassign');
@@ -27,9 +30,9 @@ async function tzOf(ws: string) {
 // Start of "today" and "this month" in the workspace time zone, as UTC instants.
 async function windows(ws: string) {
   const tz = await tzOf(ws);
-  const r = await db.execute(sql`select (date_trunc('day', now() at time zone ${tz}) at time zone ${tz}) as day, (date_trunc('month', now() at time zone ${tz}) at time zone ${tz}) as month`);
-  const row = r.rows[0] as { day: Date; month: Date };
-  return { tz, day: new Date(row.day), month: new Date(row.month) };
+  const r = await db.execute(sql`select (date_trunc('day', now() at time zone ${tz}) at time zone ${tz}) as day, (date_trunc('week', now() at time zone ${tz}) at time zone ${tz}) as week, (date_trunc('month', now() at time zone ${tz}) at time zone ${tz}) as month`);
+  const row = r.rows[0] as { day: Date; week: Date; month: Date };
+  return { tz, day: new Date(row.day), week: new Date(row.week), month: new Date(row.month) };
 }
 
 const DAY = 86400_000;
@@ -48,13 +51,15 @@ function preds(ws: string, scope: Scope, me: string, w: { day: Date; month: Date
 
 const count = async (q: Promise<Array<{ n: number }>>) => (await q)[0]?.n ?? 0;
 
-export async function dashboard(a: AuthContext, requested?: Scope) {
+export async function dashboard(a: AuthContext, requested?: Scope, range: Range = 'today') {
   const ws = a.workspaceId;
   const scope = resolveScope(a, requested);
   const now = new Date();
   const w = await windows(ws);
   const p = preds(ws, scope, a.userId, w, now);
   const canValues = a.permissions.has('crm.view_values');
+  const from = range === 'month' ? w.month : range === 'week' ? w.week : w.day;
+  const mine = scope === 'me';
 
   const [newLeads, escalations, reassignments, avg, recovery, appts, apptList, collected, stagesRows, board, hidden] = await Promise.all([
     count(db.select({ n: sql<number>`count(*)::int` }).from(leads).where(p.newLeads)),
@@ -76,13 +81,25 @@ export async function dashboard(a: AuthContext, requested?: Scope) {
       .orderBy(appointments.startsAt)
       .limit(6),
     collectedCents(ws, { from: w.month, requestedBy: scope === 'me' ? a.userId : undefined }),
-    canValues ? openPipelineByStage(ws, scope === 'me' ? a.userId : undefined) : Promise.resolve(null),
+    // stage counts are shown to everyone; values are stripped by maskValues without crm.view_values
+    openPipelineByStage(ws, scope === 'me' ? a.userId : undefined),
     db
       .select({ userId: users.id, name: users.name, status: memberships.availability })
       .from(memberships)
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(and(eq(memberships.workspaceId, ws), eq(memberships.active, true), scope === 'me' ? eq(memberships.userId, a.userId) : undefined)),
     getPrefs(ws, a.userId),
+  ]);
+
+  const [rangeLeads, trend, byStatus, projected] = await Promise.all([
+    count(db.select({ n: sql<number>`count(*)::int` }).from(leads).where(and(eq(leads.workspaceId, ws), gte(leads.createdAt, from), mine ? eq(leads.ownerId, a.userId) : undefined))),
+    leadsTrend(ws, w.tz, range === 'month' ? 30 : 7, mine ? a.userId : null),
+    db
+      .select({ status: payments.status, n: sql<number>`count(*)::int`, amount: sql<number>`coalesce(sum(${payments.amountCents}), 0)::bigint`.mapWith(Number), refunded: sql<number>`coalesce(sum(${payments.refundedCents}), 0)::bigint`.mapWith(Number) })
+      .from(payments)
+      .where(and(eq(payments.workspaceId, ws), gte(payments.createdAt, from), mine ? eq(payments.requestedBy, a.userId) : undefined))
+      .groupBy(payments.status),
+    canValues && !mine ? projectedCents(ws).then((p) => p.projectedCents) : Promise.resolve(null),
   ]);
 
   const open = await db
@@ -100,14 +117,36 @@ export async function dashboard(a: AuthContext, requested?: Scope) {
     timezone: w.tz,
     hidden: hidden.hidden,
     newLeadsToday: newLeads,
-    pipelineValue: stagesRows ? { byStage: stagesRows, totalCents: stagesRows.reduce((n, s) => n + s.valueCents, 0) } : null,
+    pipelineValue: { byStage: stagesRows, totalCents: canValues ? stagesRows.reduce((n, s) => n + s.valueCents, 0) : null },
     avgFirstResponse: { seconds: avg[0]?.s ?? null, sample: avg[0]?.n ?? 0, windowDays: 30 },
     recoveryQueue: recovery.length,
     escalations24h: { automatic: escalations, manualReassignments: reassignments },
     availability: { counts, members: board.map((m) => ({ ...m, openLeads: openBy.get(m.userId) ?? 0 })) },
     upcomingAppointments: { count: appts, items: apptList },
     collectedThisMonthCents: collected,
+    range: { key: range, from: from.toISOString() },
+    newLeads: rangeLeads,
+    trend,
+    paymentsByStatus: PAYMENT_STATUSES.map((st) => {
+      const r = byStatus.find((b) => b.status === st);
+      return { status: st, count: r?.n ?? 0, amountCents: r?.amount ?? 0, refundedCents: r?.refunded ?? 0 };
+    }),
+    projectedCents: projected,
   };
+}
+
+// Daily leads created vs leads first acknowledged, in the workspace time zone, oldest first.
+async function leadsTrend(ws: string, tz: string, days: number, ownerId: string | null) {
+  const owner = ownerId ? sql`and l.owner_id = ${ownerId}::uuid` : sql``;
+  const r = await db.execute(sql`
+    with d as (
+      select generate_series(date_trunc('day', now() at time zone ${tz}) - ((${days - 1})::int * interval '1 day'), date_trunc('day', now() at time zone ${tz}), interval '1 day') as day
+    )
+    select to_char(d.day, 'YYYY-MM-DD') as date,
+      (select count(*) from leads l where l.workspace_id = ${ws}::uuid ${owner} and (l.created_at at time zone ${tz}) >= d.day and (l.created_at at time zone ${tz}) < d.day + interval '1 day')::int as leads,
+      (select count(*) from leads l where l.workspace_id = ${ws}::uuid ${owner} and l.first_ack_at is not null and (l.first_ack_at at time zone ${tz}) >= d.day and (l.first_ack_at at time zone ${tz}) < d.day + interval '1 day')::int as acknowledged
+    from d order by d.day`);
+  return (r.rows as Array<{ date: string; leads: number; acknowledged: number }>).map((x) => ({ date: x.date, leads: Number(x.leads), acknowledged: Number(x.acknowledged) }));
 }
 
 // The records behind a figure, built from the same predicates as the totals.

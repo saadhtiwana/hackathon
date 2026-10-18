@@ -10,8 +10,8 @@ const scope = z.enum(['me', 'company']).optional();
 export const dashboardRouter = Router();
 
 dashboardRouter.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
-  const q = z.object({ scope }).parse(req.query);
-  res.json(maskValues(await dashboard(req.auth!, q.scope), req.auth!.permissions.has('crm.view_values')));
+  const q = z.object({ scope, range: z.enum(['today', 'week', 'month']).optional() }).parse(req.query);
+  res.json(maskValues(await dashboard(req.auth!, q.scope, q.range), req.auth!.permissions.has('crm.view_values')));
 }));
 
 dashboardRouter.get('/dashboard/records/:figure', requireAuth, asyncHandler(async (req, res) => {

@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type Stripe from 'stripe';
 import { db } from '../../core/db/client.js';
-import { contacts, opportunities, payments, users } from '../../core/db/schema/index.js';
+import { contacts, opportunities, payments, users, workspaces } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { activity } from '../../core/activity/index.js';
 import { getOr404 } from '../../core/db/scoped.js';
@@ -55,8 +55,8 @@ export async function createPaymentRequest(a: AuthContext, opportunityId: string
             client_reference_id: payment.id,
             payment_intent_data: { metadata: meta },
             customer_email: contact?.email ?? undefined,
-            success_url: `${base}/payments/${payment.id}?status=success`,
-            cancel_url: `${base}/payments/${payment.id}?status=cancelled`,
+            success_url: `${base}/pay/${payment.id}?status=success`,
+            cancel_url: `${base}/pay/${payment.id}?status=cancel`,
           },
           { idempotencyKey: payment.id },
         )
@@ -204,4 +204,16 @@ export async function sendPaymentLink(a: AuthContext, id: string) {
   const message = await sendToContact(a, p.contactId, `Payment request for ${amount}${p.description ? ` (${p.description})` : ''}.\n\nPay securely here: ${p.url}`, 'email');
   await activity.record(db, { workspaceId: a.workspaceId, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId: a.userId, data: { paymentId: p.id, event: 'link_sent', channel: 'email', messageId: message.id } });
   return { message };
+}
+
+// Public receipt page data: only what a customer needs, found by the unguessable payment id.
+export async function publicPayment(id: string) {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const [r] = await db
+    .select({ id: payments.id, status: payments.status, amountCents: payments.amountCents, currency: payments.currency, url: payments.url, workspaceName: workspaces.name })
+    .from(payments)
+    .innerJoin(workspaces, eq(workspaces.id, payments.workspaceId))
+    .where(eq(payments.id, id));
+  if (!r) return null;
+  return { reference: r.id.slice(0, 8).toUpperCase(), status: r.status, amountCents: r.amountCents, currency: r.currency, workspaceName: r.workspaceName, checkoutUrl: r.status === 'requested' ? r.url : null };
 }

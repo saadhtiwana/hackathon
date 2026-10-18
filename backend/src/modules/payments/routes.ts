@@ -10,6 +10,13 @@ const status = z.enum(['requested', 'paid', 'expired', 'failed', 'refunded', 'pa
 
 export const paymentsRouter = Router();
 
+// Public, no login: the page Stripe sends customers back to.
+paymentsRouter.get('/public/payments/:id', asyncHandler(async (req, res) => {
+  const p = await svc.publicPayment(String(req.params.id));
+  if (!p) return void res.status(404).json({ error: { code: 'not_found', message: 'Payment not found' } });
+  res.json(p);
+}));
+
 const createBody = z
   .object({
     amount: z.number().positive().max(1_000_000_000).optional(),

@@ -62,7 +62,7 @@ export function Table<T>({
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="overflow-x-auto">
-      <table className="w-full min-w-[640px] border-collapse text-left">
+      <table className="w-full min-w-[520px] sm:min-w-[640px] border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-surface">
           <tr className="h-10 border-b border-border text-[12px] text-text-muted">

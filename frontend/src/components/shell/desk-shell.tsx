@@ -235,14 +235,14 @@ export function DeskShell({ children }: { children: React.ReactNode }) {
         <UserCard me={session} status={status} />
       </Sheet>
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 grid h-14 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 border-b border-border bg-canvas px-3 sm:px-5">
+        <header className="sticky top-0 z-20 grid h-14 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] border-b border-border bg-canvas px-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-1.5">
             <IconButton className="md:hidden" label="Open navigation" onClick={() => setMenu(true)}>
               <Menu className="size-[18px]" />
             </IconButton>
             <CurrentTitle fallback={session.workspace.name} />
           </div>
-          <p className="max-w-[34vw] truncate text-center text-[13px] font-medium sm:max-w-xs" title={session.workspace.name}>
+          <p className="hidden max-w-[34vw] truncate text-center text-[13px] font-medium sm:block sm:max-w-xs" title={session.workspace.name}>
             {session.workspace.name}
           </p>
           <div className="flex items-center justify-end gap-1.5">

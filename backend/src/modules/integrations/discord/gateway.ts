@@ -58,8 +58,13 @@ async function login(ws: string, cfg: DiscordConfig, withContent: boolean): Prom
   });
   client.on('error', (e) => logger.error('discord client error', { err: e.message }));
   const ready = new Promise<void>((resolve) => client.once('clientReady', () => resolve()));
-  await client.login(cfg.botToken);
-  await ready;
+  const timeout = new Promise<never>((_, rej) => setTimeout(() => rej(new Error('Discord gateway did not become ready within 30s')), 30_000).unref());
+  try {
+    await Promise.race([client.login(cfg.botToken).then(() => ready), timeout]);
+  } catch (e) {
+    await client.destroy().catch(() => {});
+    throw e;
+  }
   return client;
 }
 

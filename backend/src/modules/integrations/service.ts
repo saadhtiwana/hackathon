@@ -12,6 +12,7 @@ import type { AdapterContext, ProviderAdapter } from './adapter.js';
 import { ProviderError } from './errors.js';
 import { getAdapter, listAdapters } from './registry.js';
 import { consentUrl, googleConfigured } from './google/adapter.js';
+import { gateways } from './discord/gateway.js';
 import { randomToken } from '../../core/crypto/index.js';
 
 const mask = (last4: string | null) => (last4 ? `••••${last4}` : null);
@@ -78,6 +79,7 @@ export async function listIntegrations(a: AuthContext) {
       status: row?.status ?? 'not_connected',
       lastOkAt: row?.lastOkAt ?? null, lastErrorAt: row?.lastErrorAt ?? null, lastError: row?.lastError ?? null,
       secretMasked: mask(row?.secretLast4 ?? null), recentErrors, limits: lim,
+      ...(ad.id === 'discord' ? { gatewayOnline: gateways.isOnline(ws) } : {}),
     };
   });
 }

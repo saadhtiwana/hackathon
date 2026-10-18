@@ -83,7 +83,7 @@ export function TrendChart({ trend }: { trend: NonNullable<DashboardData["trend"
               tickLine={false}
               axisLine={false}
               tick={{ fontSize: 11, fill: "var(--text-muted)" }}
-              tickFormatter={(d: string) => format(new Date(`${d}T00:00:00`), trend.length > 10 ? "d MMM" : "EEE")}
+              tickFormatter={(d: string) => format(new Date(`${d}T00:00:00`), trend.length > 10 ? "d MMM" : "EEEEE")}
               interval={trend.length > 10 ? "preserveStartEnd" : 0}
               minTickGap={4}
             />

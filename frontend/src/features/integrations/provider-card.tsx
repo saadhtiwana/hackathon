@@ -38,8 +38,8 @@ export function ProviderCard({ item, canManage, retired }: { item: Integration; 
   }
 
   return (
-    <Card className="flex flex-col gap-4 p-5">
-      <div className="flex items-start gap-3">
+    <Card className="flex min-w-0 flex-col gap-4 p-5 [overflow-wrap:anywhere]">
+      <div className="flex min-w-0 items-start gap-3">
         <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-text" aria-hidden>
           <Icon className="size-5" />
         </span>
@@ -48,7 +48,7 @@ export function ProviderCard({ item, canManage, retired }: { item: Integration; 
           <p className="text-[13px] text-text-muted">{retired ? "No longer used. Customer messaging moved to email." : item.limits.summary}</p>
           {item.provider === "email" && (item as { agencyAddress?: string | null }).agencyAddress ? (
             <p className="mt-1 text-[12px] text-text-muted">
-              Customers write to <span className="font-mono">{(item as { agencyAddress?: string | null }).agencyAddress}</span>
+              Customers write to <span className="font-mono break-all">{(item as { agencyAddress?: string | null }).agencyAddress}</span>
             </p>
           ) : null}
         </div>

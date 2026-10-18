@@ -51,3 +51,5 @@ bin/
 # Local tooling
 CLAUDE.md
 .claude/
+.cursor/
+.secrets/

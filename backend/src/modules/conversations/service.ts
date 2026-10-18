@@ -7,6 +7,7 @@ import { getOr404 } from '../../core/db/scoped.js';
 import { conflict, forbidden, notFound } from '../../core/errors.js';
 import { integrationEvents } from '../../core/integration-events/index.js';
 import { leadHooks } from '../../core/lead-hooks.js';
+import { notify } from '../../core/notifications/index.js';
 import { outbox, type OutboxJob } from '../../core/outbox/index.js';
 import { realtime } from '../../core/realtime/index.js';
 import type { AuthContext } from '../../core/auth/context.js';
@@ -47,6 +48,8 @@ export async function storeInbound(tx: Tx, ws: string, contact: ContactRow, chan
   const [m] = await tx.insert(messages).values({ workspaceId: ws, conversationId: convo.id, providerSid: messageId, direction: 'in', body, status: 'received', createdAt: at ?? new Date() }).onConflictDoNothing().returning({ id: messages.id });
   if (!m) return null;
   await tx.update(conversations).set({ lastMessageAt: at ?? new Date() }).where(eq(conversations.id, convo.id));
+  const [openLead] = await tx.select({ id: leads.id, ownerId: leads.ownerId }).from(leads).where(and(eq(leads.workspaceId, ws), eq(leads.contactId, contact.id), inArray(leads.status, ['assigned', 'acknowledged']))).limit(1);
+  if (openLead?.ownerId) await notify(tx, { workspaceId: ws, userId: openLead.ownerId, kind: 'customer_replied', title: `${contact.name} wrote to you`, body: body.replace(/\s+/g, ' ').slice(0, 100), href: `/leads/${openLead.id}` });
   await activity.record(tx, { workspaceId: ws, entity: { contactId: contact.id }, type: 'message', actorId: null, data: { conversationId: convo.id, messageId: m.id, direction: 'in', channel, preview: body.replace(/\s+/g, ' ').slice(0, 80) } });
   return { conversationId: convo.id, messageId: m.id };
 }

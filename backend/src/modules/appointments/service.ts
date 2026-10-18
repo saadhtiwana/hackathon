@@ -7,6 +7,7 @@ import { getOr404 } from '../../core/db/scoped.js';
 import { env } from '../../core/env.js';
 import { AppError, conflict, unprocessable } from '../../core/errors.js';
 import { integrationEvents } from '../../core/integration-events/index.js';
+import { notify } from '../../core/notifications/index.js';
 import { realtime } from '../../core/realtime/index.js';
 import type { AuthContext } from '../../core/auth/context.js';
 import { ProviderError } from '../integrations/errors.js';
@@ -69,6 +70,7 @@ export async function createAppointment(a: AuthContext, i: { userId: string; con
     await activity.record(tx, { workspaceId: ws, entity: { contactId: i.contactId, opportunityId: i.opportunityId }, type: 'appointment', actorId: a.userId, data: { appointmentId: row!.id, event: 'created', title: i.title, startsAt: i.start, withUser: member.name, timeZone: i.timeZone } });
     return row!;
   });
+  if (i.userId !== a.userId) await notify(db, { workspaceId: ws, userId: i.userId, kind: 'appointment_booked', title: `Appointment booked: ${i.title}`, body: `With ${contact.name}`, href: '/appointments' });
   realtime.publish(ws, { type: 'appointment.updated', ids: { appointmentId: appt.id, contactId: i.contactId, userId: i.userId } });
   return { ...appt, calendarLink: ev.htmlLink, inviteSentTo: contact.email ?? null };
 }

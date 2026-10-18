@@ -60,6 +60,7 @@ export const useInvite = () =>
     apiFetch<{ id: string; email: string; inviteUrl: string; expiresAt: string }>("/users/invites", { method: "POST", body }),
   );
 export const useRevokeInvite = () => useTeamMutation((id: string) => apiFetch<void>(`/users/invites/${id}`, { method: "DELETE" }));
+export const useResendInvite = () => useTeamMutation((id: string) => apiFetch<{ email: string; inviteUrl: string }>(`/users/invites/${id}/resend`, { method: "POST" }));
 export const useSaveRole = () =>
   useTeamMutation((a: { id: string; permissions: string[] }) => apiFetch<{ role: Role }>(`/roles/${a.id}`, { method: "PATCH", body: { permissions: a.permissions } }));
 

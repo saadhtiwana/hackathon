@@ -22,6 +22,7 @@ import { googleRouter } from './modules/integrations/google/routes.js';
 import { notificationsRouter } from './modules/integrations/google/alerts.js';
 import { appointmentsRouter } from './modules/appointments/routes.js';
 import './modules/conversations/email.js';
+import { notificationsRouter as bellRouter } from './core/notifications/index.js';
 import { dashboardRouter } from './modules/dashboard/routes.js';
 import { auditRouter } from './modules/audit/routes.js';
 import { savedListsRouter } from './modules/savedlists/routes.js';
@@ -61,6 +62,7 @@ export function createApp() {
   api.use(rolesRouter);
   api.use(crmRouter);
   api.use(activitiesRouter);
+  api.use(bellRouter);
   api.use(dashboardRouter);
   api.use(auditRouter);
   api.use(savedListsRouter);

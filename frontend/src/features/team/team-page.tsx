@@ -16,7 +16,7 @@ import { Table, type Column } from "@/components/ui/table";
 import { useToast } from "@/components/ui/toast";
 import { format } from "date-fns";
 import { can } from "@/lib/permissions";
-import { editBlock, levelLabel, useCalendars, useInvites, useMembers, useRevokeInvite, useRoles, useUpdateMember, type Member } from "./api";
+import { editBlock, levelLabel, useCalendars, useInvites, useMembers, useResendInvite, useRevokeInvite, useRoles, useUpdateMember, type Member } from "./api";
 import { InviteDialog } from "./invite-dialog";
 import { RolesMatrix } from "./roles-matrix";
 
@@ -32,6 +32,7 @@ export function TeamPage() {
   const calendars = useCalendars(me.isSuccess && allowed);
   const update = useUpdateMember();
   const revoke = useRevokeInvite();
+  const resend = useResendInvite();
   const toast = useToast();
   const actor = me.data?.role.baseLevel ?? "user";
   const roleList = roles.data?.items ?? [];
@@ -175,6 +176,23 @@ export function TeamPage() {
                         </span>
                       </span>
                     </span>
+                    <span className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="quiet"
+                      disabled={resend.isPending}
+                      onClick={() =>
+                        resend.mutate(i.id, {
+                          onSuccess: (r) => {
+                            void navigator.clipboard?.writeText(r.inviteUrl).catch(() => {});
+                            toast(`Invite emailed to ${r.email}. Link copied as a fallback.`, "ok");
+                          },
+                          onError: (e) => toast(e.message, "signal"),
+                        })
+                      }
+                    >
+                      Resend
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -183,6 +201,7 @@ export function TeamPage() {
                     >
                       Revoke
                     </Button>
+                    </span>
                   </li>
                 ))}
               </ul>

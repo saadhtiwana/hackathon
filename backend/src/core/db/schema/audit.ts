@@ -1,4 +1,4 @@
-import { index, jsonb, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { createdAt, id } from './_helpers.js';
 import { users, workspaces } from './workspace.js';
 
@@ -32,4 +32,21 @@ export const dashboardPrefs = pgTable(
     hidden: jsonb('hidden').notNull().default([]),
   },
   (t) => [index('dashboard_prefs_workspace_idx').on(t.workspaceId), uniqueIndex('dashboard_prefs_user_uq').on(t.workspaceId, t.userId)],
+);
+
+// In-app notifications, one row per recipient (the header bell).
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: id(),
+    workspaceId: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    title: text('title').notNull(),
+    body: text('body'),
+    href: text('href'),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index('notifications_user_idx').on(t.userId, t.createdAt), index('notifications_workspace_idx').on(t.workspaceId)],
 );

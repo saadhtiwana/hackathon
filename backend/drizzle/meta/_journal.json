@@ -50,6 +50,13 @@
       "when": 1792309002267,
       "tag": "0006_email_channel_calendar_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792315865449,
+      "tag": "0007_notifications",
+      "breakpoints": true
     }
   ]
 }

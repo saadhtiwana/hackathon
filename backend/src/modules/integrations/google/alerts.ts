@@ -11,6 +11,7 @@ import { outbox, type OutboxJob } from '../../../core/outbox/index.js';
 import { requireAuth } from '../../../core/auth/sessions.js';
 import { requirePermission } from '../../../core/rbac/index.js';
 import { ProviderError } from '../errors.js';
+import { notify } from '../../../core/notifications/index.js';
 import { agencyAddress } from '../../conversations/email.js';
 import { listAlerts } from '../discord/alerts.js';
 import { profile, sendEmail } from './gmail.js';
@@ -51,6 +52,7 @@ async function emailAlert(job: OutboxJob, type: Type) {
   const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
   const html = `<!doctype html><html><body style="margin:0;background:#f4f2ec;font-family:Inter,Arial,sans-serif;color:#17140f"><div style="max-width:520px;margin:0 auto;padding:24px"><div style="background:#fff;border:1px solid #e6e2d8;border-radius:12px;padding:24px"><p style="margin:0 0 4px;font-size:12px;color:#6b665c;letter-spacing:.02em;text-transform:uppercase">${type === 'alert.escalation' ? 'Lead escalated to you' : 'New lead assigned to you'}</p><h1 style="margin:0 0 12px;font-size:22px;line-height:1.25">${esc(name)}</h1><p style="margin:0 0 4px;font-size:14px"><strong>Source:</strong> ${esc(sourceLabel)}</p><p style="margin:12px 0 20px;font-size:14px;line-height:1.5">${esc(why)}</p><a href="${esc(link)}" style="display:inline-block;background:#17140f;color:#fffdf8;text-decoration:none;font-weight:600;font-size:14px;padding:11px 18px;border-radius:8px">Open lead</a></div><p style="margin:14px 4px 0;font-size:12px;color:#8a857a">Sent by Relay for ${esc(wsRow?.name ?? 'your workspace')}</p></div></body></html>`;
 
+  await notify(db, { workspaceId: ws, userId: p.toUserId, kind: type === 'alert.escalation' ? 'lead_escalated' : 'lead_assigned', title: subject, body: why, href: p.linkPath ?? `/leads/${p.leadId}` });
   const store = mailboxStore(ws);
   try {
     const tokens = await store.load();

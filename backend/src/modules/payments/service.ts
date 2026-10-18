@@ -15,6 +15,7 @@ import { ProviderError, withRetry } from '../integrations/errors.js';
 import { markError, markOk, loadConfig } from '../integrations/service.js';
 import { stripeAdapter } from '../integrations/stripe/adapter.js';
 import { stripeFor, toProviderError } from '../integrations/stripe/client.js';
+import { notify } from '../../core/notifications/index.js';
 import { sendToContact } from '../conversations/service.js';
 import { createOpportunity } from '../crm/opportunities.js';
 
@@ -119,6 +120,7 @@ export async function applyTransition(ws: string, paymentId: string, change: Cha
     await activity.record(tx, { workspaceId: ws, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId, data: { paymentId: p.id, status: next!.status, amountCents: p.amountCents, refundedCents: next!.refundedCents, currency: p.currency, reason: next!.failureReason } });
     return next!;
   });
+  if (out && out.requestedBy && out !== undefined && ['paid', 'failed', 'expired', 'refunded', 'partially_refunded'].includes(out.status)) await notify(db, { workspaceId: ws, userId: out.requestedBy, kind: `payment_${out.status}`, title: `Payment ${out.status.replace('_', ' ')}: ${(out.amountCents / 100).toLocaleString('en-US')} ${out.currency}`, href: out.opportunityId ? `/opportunities/${out.opportunityId}` : '/payments' });
   if (out) realtime.publish(ws, { type: 'payment.updated', ids: { paymentId: out.id, opportunityId: out.opportunityId, contactId: out.contactId } });
   return out;
 }

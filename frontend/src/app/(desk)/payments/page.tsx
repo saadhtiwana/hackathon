@@ -1,11 +1,5 @@
-import { Placeholder } from "@/features/placeholder";
+import { PaymentsList } from "@/features/payments/payments-list";
 
 export default function PaymentsPage() {
-  return (
-    <Placeholder
-      title="Payments"
-      description="Money requested and money collected."
-      body="Stripe payment requests and their status will list here. Card numbers never touch this desk."
-    />
-  );
+  return <PaymentsList />;
 }

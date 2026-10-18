@@ -84,12 +84,13 @@ export function TrendChart({ trend }: { trend: NonNullable<DashboardData["trend"
               axisLine={false}
               tick={{ fontSize: 11, fill: "var(--text-muted)" }}
               tickFormatter={(d: string) => format(new Date(`${d}T00:00:00`), trend.length > 10 ? "d MMM" : "EEE")}
-              minTickGap={12}
+              interval={trend.length > 10 ? "preserveStartEnd" : 0}
+              minTickGap={4}
             />
             <YAxis allowDecimals={false} tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "var(--text-muted)" }} width={40} />
             <Tooltip contentStyle={tooltipStyle} labelFormatter={(d) => format(new Date(`${d}T00:00:00`), "EEE d MMM")} />
-            <Line type="monotone" dataKey="leads" name="Leads" stroke="var(--accent)" strokeWidth={2} dot={false} isAnimationActive={false} />
-            <Line type="monotone" dataKey="acknowledged" name="Acknowledged" stroke="var(--status-available)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line type="monotone" dataKey="leads" name="Leads" stroke="var(--accent)" strokeWidth={4} dot={{ r: 3 }} isAnimationActive={false} />
+            <Line type="monotone" dataKey="acknowledged" name="Acknowledged" stroke="var(--status-available)" strokeWidth={2} dot={{ r: 2 }} isAnimationActive={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>

@@ -234,7 +234,7 @@ describe('onAvailabilityChange', () => {
     await w.svc.onAvailabilityChange(w.tx, { workspaceId: W, userId: 'a', status: 'offline' });
     w.now.t = at(601);
     const q = await w.svc.recoveryQueue(W, { userId: 'mg', canSeeAll: true });
-    expect(q.items[0].reasons).toEqual([{ code: 'idle', text: 'No recorded action for 601s (owner away)' }]);
+    expect(q.items[0].reasons).toEqual([{ code: 'idle', text: 'Idle: no action for 10 min 1 s (limit 10 min) (owner away)' }]);
   });
 });
 

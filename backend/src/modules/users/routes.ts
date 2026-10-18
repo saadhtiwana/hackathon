@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { asyncHandler } from '../../core/errors.js';
 import { requireAuth } from '../../core/auth/sessions.js';
 import { requireAnyPermission, requirePermission } from '../../core/rbac/index.js';
-import { availabilityBoard, createInvite, listInvites, listMembers, revokeInvite, setAvailability, updateMember } from './service.js';
+import { availabilityBoard, createInvite, resendInvite, listInvites, listMembers, revokeInvite, setAvailability, updateMember } from './service.js';
 
 const status = z.enum(['available', 'busy', 'on_leave', 'offline']);
 const uuid = z.string().uuid();
@@ -21,6 +21,10 @@ usersRouter.post('/users/invites', requirePermission('users.manage'), asyncHandl
 
 usersRouter.get('/users/invites', requirePermission('users.manage'), asyncHandler(async (req, res) => {
   res.json({ items: await listInvites(req.auth!.workspaceId) });
+}));
+
+usersRouter.post('/users/invites/:id/resend', requirePermission('users.manage'), asyncHandler(async (req, res) => {
+  res.json(await resendInvite(req.auth!, uuid.parse(req.params.id)));
 }));
 
 usersRouter.delete('/users/invites/:id', requirePermission('users.manage'), asyncHandler(async (req, res) => {

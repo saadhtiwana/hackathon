@@ -11,6 +11,8 @@ import { leadHooks } from '../../core/lead-hooks.js';
 import { realtime } from '../../core/realtime/index.js';
 import { env } from '../../core/env.js';
 import { addMember } from '../workspace/service.js';
+import { outbox } from '../../core/outbox/index.js';
+import { workspaces } from '../../core/db/schema/index.js';
 
 export type Availability = 'available' | 'busy' | 'on_leave' | 'offline';
 
@@ -77,7 +79,9 @@ export async function createInvite(actor: AuthContext, i: { email: string; roleI
       .values({ workspaceId: actor.workspaceId, email, roleId: role.id, tokenHash: sha256(token), invitedBy: actor.userId, expiresAt: new Date(Date.now() + 7 * 86400_000) })
       .returning();
     await audit.record(tx, { workspaceId: actor.workspaceId, actorId: actor.userId, action: 'user.invited', targetType: 'invite', targetId: inv!.id, after: { email, roleId: role.id, role: role.name } });
-    return { id: inv!.id, email, roleId: role.id, expiresAt: inv!.expiresAt, inviteUrl: `${env.APP_URL.replace(/\/$/, '')}/accept-invite?token=${token}` };
+    const inviteUrl = `${env.APP_URL.replace(/\/$/, '')}/accept-invite?token=${token}`;
+    await queueInviteEmail(tx, actor, { email, roleName: role.name, inviteUrl, expiresAt: inv!.expiresAt });
+    return { id: inv!.id, email, roleId: role.id, expiresAt: inv!.expiresAt, inviteUrl };
   });
 }
 
@@ -170,4 +174,26 @@ export async function availabilityBoard(workspaceId: string) {
   const counts = new Map<string, number>();
   for (const l of open) if (l.ownerId && (l.status === 'assigned' || l.status === 'acknowledged')) counts.set(l.ownerId, (counts.get(l.ownerId) ?? 0) + 1);
   return members.filter((m) => m.active).map((m) => ({ userId: m.id, name: m.name, status: m.availability, openLeads: counts.get(m.id) ?? 0 }));
+}
+
+async function queueInviteEmail(tx: Tx, actor: AuthContext, i: { email: string; roleName: string; inviteUrl: string; expiresAt: Date }) {
+  const [w] = await tx.select({ name: workspaces.name }).from(workspaces).where(eq(workspaces.id, actor.workspaceId));
+  const [u] = await tx.select({ name: users.name }).from(users).where(eq(users.id, actor.userId));
+  await outbox.enqueue(tx, { workspaceId: actor.workspaceId, kind: 'email.invite', payload: { to: i.email, workspaceName: w?.name ?? 'your workspace', inviterName: u?.name ?? 'A teammate', roleName: i.roleName, inviteUrl: i.inviteUrl, expiresAt: i.expiresAt.toISOString() } });
+}
+
+// Resend: a fresh link replaces the old one, valid for another 7 days.
+export async function resendInvite(actor: AuthContext, id: string) {
+  return db.transaction(async (tx) => {
+    const [inv] = await tx.select().from(invites).where(and(eq(invites.workspaceId, actor.workspaceId), eq(invites.id, id), isNull(invites.acceptedAt)));
+    if (!inv) throw notFound('Invite');
+    const [role] = await tx.select().from(roles).where(eq(roles.id, inv.roleId));
+    const token = randomToken(24);
+    const expiresAt = new Date(Date.now() + 7 * 86400_000);
+    await tx.update(invites).set({ tokenHash: sha256(token), expiresAt }).where(eq(invites.id, id));
+    const inviteUrl = `${env.APP_URL.replace(/\/$/, '')}/accept-invite?token=${token}`;
+    await queueInviteEmail(tx, actor, { email: inv.email, roleName: role?.name ?? 'member', inviteUrl, expiresAt });
+    await audit.record(tx, { workspaceId: actor.workspaceId, actorId: actor.userId, action: 'invite.resent', targetType: 'invite', targetId: id, after: { email: inv.email } });
+    return { id, email: inv.email, expiresAt, inviteUrl };
+  });
 }

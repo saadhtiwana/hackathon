@@ -94,3 +94,26 @@ notificationsRouter.put('/me/notifications', requireAuth, asyncHandler(async (re
   });
   res.json({ ok: true });
 }));
+
+// Invite email, sent from the agency mailbox through the outbox so it retries like alerts do.
+outbox.registerHandler('email.invite', async (job) => {
+  const p = job.payload as { to: string; workspaceName: string; inviterName: string; roleName: string; inviteUrl: string; expiresAt: string };
+  const store = mailboxStore(job.workspaceId);
+  try {
+    const tokens = await store.load();
+    if (!tokens) {
+      await integrationEvents.recordOutbound({ workspaceId: job.workspaceId, provider: 'gmail', type: 'invite.email', result: 'error', error: 'not sent: the agency mailbox is not connected; copy the invite link instead', ref: p.to });
+      return;
+    }
+    const from = tokens.email ?? (await profile(store)).emailAddress;
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    const text = `${p.inviterName} invited you to ${p.workspaceName} on Relay as ${p.roleName}.\n\nAccept the invite: ${p.inviteUrl}\n\nThe link works for 7 days.\n\nSent by Relay for ${p.workspaceName}`;
+    const html = `<!doctype html><html><body style="margin:0;background:#f4f2ec;font-family:Inter,Arial,sans-serif;color:#17140f"><div style="max-width:520px;margin:0 auto;padding:24px"><div style="background:#fff;border:1px solid #e6e2d8;border-radius:12px;padding:24px"><h1 style="margin:0 0 12px;font-size:22px">You're invited to ${esc(p.workspaceName)}</h1><p style="margin:0 0 20px;font-size:14px;line-height:1.5">${esc(p.inviterName)} invited you to join as <strong>${esc(p.roleName)}</strong> on Relay.</p><a href="${esc(p.inviteUrl)}" style="display:inline-block;background:#17140f;color:#fffdf8;text-decoration:none;font-weight:600;font-size:14px;padding:11px 18px;border-radius:8px">Accept invite</a><p style="margin:16px 0 0;font-size:12px;color:#6b665c">The link works for 7 days.</p></div><p style="margin:14px 4px 0;font-size:12px;color:#8a857a">Sent by Relay for ${esc(p.workspaceName)}</p></div></body></html>`;
+    const sent = await sendEmail(store, { from, to: p.to, subject: `You're invited to ${p.workspaceName} on Relay`, body: text, html, replyTo: await agencyAddress(job.workspaceId) });
+    await integrationEvents.recordOutbound({ workspaceId: job.workspaceId, provider: 'gmail', type: 'invite.email', result: 'ok', ref: sent.id });
+  } catch (e) {
+    const pe = e instanceof ProviderError ? e : new ProviderError('Unexpected problem sending the invite', true, 'unexpected');
+    await integrationEvents.recordOutbound({ workspaceId: job.workspaceId, provider: 'gmail', type: 'invite.email', result: 'error', error: pe.message, ref: p.to });
+    if (pe.temporary && job.attempts < job.maxAttempts) throw pe;
+  }
+});

@@ -2,6 +2,6 @@
   "name": "relay",
   "private": true,
   "scripts": {
-    "deploy:web": "vercel pull --yes --environment=production && vercel build --prod && vercel deploy --prebuilt --prod"
+    "deploy:web": "vercel pull --yes --environment=production && vercel build --prod && vercel deploy --prebuilt --prod --archive=tgz"
   }
 }

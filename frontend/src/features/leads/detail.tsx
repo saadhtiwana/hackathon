@@ -25,6 +25,8 @@ import { can } from "@/lib/permissions";
 import { useAcknowledge, useCloseLead, useLead, useMemberNames, type Assignment, type Lead } from "./api";
 import { assignmentTitle, endLabel, LeadStatusPill, RecoveryReasonLine, skipLabel, SourceLabel } from "./components/labels";
 import { Owner } from "./components/owner";
+import { EnquiryCard } from "./components/enquiry";
+import { ContactActions } from "../crm/contact-actions";
 import { ReassignDialog } from "./components/reassign-dialog";
 import { formatDuration, useServerNow } from "./time";
 
@@ -85,6 +87,14 @@ export function LeadDetail() {
           </div>
         }
       />
+
+      <EnquiryCard leadId={lead.id} />
+      {lead.status !== "closed" && can(me.data, "crm.edit") ? (
+        <div className="mb-4">
+          <p className="text-[12px] font-medium text-text-muted">Next step</p>
+          <ContactActions contactId={lead.contactId} contactName={title} ownerId={lead.ownerId} />
+        </div>
+      ) : null}
 
       <div className={lead.status === "assigned" && lead.ackDeadline ? "mb-6 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]" : "mb-6"}>
       <Card>

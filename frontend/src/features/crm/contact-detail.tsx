@@ -16,6 +16,7 @@ import { can } from "@/lib/permissions";
 import { useCrmMutations, type Activity } from "./api";
 import { ActivityTimeline } from "./activity-timeline";
 import { Problem } from "./problem";
+import { ContactActions } from "./contact-actions";
 import { ContactAppointments, ContactConversations, ContactPayments, type SlotAppointment, type SlotConversation, type SlotPayment } from "./slots";
 
 type Detail = {
@@ -53,6 +54,7 @@ export function ContactDetail() {
         {[data.contact.phone, data.contact.email, data.company ? data.company.name : null, data.owner ? data.owner.name : "Unassigned"].filter(Boolean).join(" · ")}
       </p>
       {data.contact.optedOut ? <Badge tone="signal" className="mt-2">Opted out</Badge> : null}
+      {can(me.data, "crm.edit") ? <ContactActions contactId={data.contact.id} contactName={data.contact.name} conversationId={data.conversations[0]?.id ?? null} ownerId={data.owner?.id ?? null} /> : null}
 
       <section className="mt-8">
         <h2 className="text-[18px] font-semibold">Conversations</h2>

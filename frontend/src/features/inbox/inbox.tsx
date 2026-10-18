@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format, isToday } from "date-fns";
 import { AlertCircle, ArrowLeft, Ban, Check, CheckCheck, Clock, Mail, RotateCw, Send } from "lucide-react";
 import { useMe } from "@/components/session";
@@ -34,6 +34,10 @@ export function Inbox() {
     : [{ value: "mine", label: "Mine" }];
   const [scope, setScope] = useState<Scope>("mine");
   const [selected, setSelected] = useState<string | null>(null);
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get("c");
+    if (c) setSelected(c);
+  }, []);
   const list = useConversations(scope, me.isSuccess);
   const rows = list.data?.items ?? [];
 

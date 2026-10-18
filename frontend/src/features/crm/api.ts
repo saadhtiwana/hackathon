@@ -74,6 +74,7 @@ export type Activity = {
   id: string;
   type: string;
   actorName: string | null;
+  summary?: string | null;
   data: Record<string, unknown> | null;
   createdAt: string;
 };

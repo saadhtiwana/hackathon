@@ -19,6 +19,7 @@ const labels: Record<string, string> = {
 
 function detail(activity: Activity) {
   const data = activity.data ?? {};
+  if (typeof activity.summary === "string" && activity.summary) return activity.summary;
   if (typeof data.body === "string") return data.body;
   if (typeof data.from === "string" || typeof data.to === "string") return `${data.from ?? "—"} → ${data.to ?? "—"}`;
   if (data.event === "created") return "Record created";

@@ -18,15 +18,15 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | F2.6 | Filtering and saved lists | Ahmad | todo |
 | F2.7 | Activity history | Saad | in progress |
 | F2.8 | Complete customer view | Saad | in progress |
-| F3.1 | Lead capture from multiple sources | Saad + Abdullah | todo |
-| F3.2 | Employee availability | Saad + Abdullah | in progress |
-| F3.3 | Configurable assignment rules | Abdullah | in progress |
-| F3.4 | Acknowledgement window | Abdullah | in progress |
-| F3.5 | Escalation chain | Abdullah | in progress |
-| F3.6 | Reassignment on absence | Abdullah | in progress |
-| F3.7 | Recovery queue | Abdullah | in progress |
-| F3.8 | No duplicate action | Abdullah | in progress |
-| F3.9 | External notification of escalations | Saad + Abdullah | todo |
+| F3.1 | Lead capture from multiple sources | Saad + Abdullah | in progress: web form and manual entry in `modules/leads` (routes, service); WhatsApp intake calls `leadHooks.createLead` from I1 |
+| F3.2 | Employee availability | Saad + Abdullah | in progress: lead side in `modules/leads` service `onAvailabilityChange` |
+| F3.3 | Configurable assignment rules | Abdullah | in progress: implemented and tested in `modules/leads` (domain assign/eligibility, service, `/assignment-rules`); router mount pending |
+| F3.4 | Acknowledgement window | Abdullah | in progress: implemented and tested in `modules/leads` (`ackRemainingSeconds`, acknowledge, onActivity); router mount pending |
+| F3.5 | Escalation chain | Abdullah | in progress: implemented and tested in `modules/leads` (domain escalate, service sweep); needs `/internal/tick` |
+| F3.6 | Reassignment on absence | Abdullah | in progress: implemented and tested in `modules/leads` (domain availability, service onAvailabilityChange); policy in `docs/lead-engine.md` section 5 |
+| F3.7 | Recovery queue | Abdullah | in progress: implemented and tested in `modules/leads` (domain recovery, `/leads/recovery`); router mount pending |
+| F3.8 | No duplicate action | Abdullah | in progress: implemented and tested against Postgres in `modules/leads` (row locks, SKIP LOCKED sweep, versioned writes) |
+| F3.9 | External notification of escalations | Saad + Abdullah | in progress: `notify.escalation` outbox job enqueued by the sweep; delivery handler pending |
 | F4.1 | Record of important actions | Saad | in progress |
 | F4.2 | Restricted visibility | Abdullah | in progress |
 | F4.3 | Tamper resistance | Saad | done |

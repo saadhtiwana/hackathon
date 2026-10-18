@@ -64,3 +64,16 @@ Every item below was checked on the live app. "works" means exercised on the liv
 
 - **9a works.** A 360 px sweep of login, dashboard, leads, lead detail, inbox, pipeline, contacts, contact detail, appointments, payments, saved lists, team, integrations, audit and the 404 page found no horizontal scroll once the integrations cards were fixed. Drawer navigation and visible keyboard focus come from the shared design system; a full keyboard walkthrough of every dialog was not repeated.
 - **9b works.** Actions show loading, success toasts and plain error messages.
+
+## Known limitations (for the judging form)
+
+| What does not fully work | What works instead |
+|---|---|
+| Twilio WhatsApp/SMS and Telegram cannot be used (Twilio blocks Pakistani signups with error 0x07, Telegram is blocked in Pakistan) | Messaging and alerts go through the agency Gmail account, behind a provider adapter so another provider can be plugged in by configuration |
+| Gmail has no instant push and no delivered or read receipts | The inbox is polled every 30 s; messages show queued, sent or failed with a Retry button; a signed webhook (`POST /webhooks/email/<workspace id>`) accepts forwarded mail, rejects forgeries and replays |
+| The Google app is in Testing mode: only listed test users can connect and refresh tokens may expire after 7 days | An expired or revoked grant shows as "Needs reconnect", booking that person is blocked with the reason, and reconnecting takes one click |
+| Stripe is test mode only; the paid, failed and refund event mappings were exercised with a real test payment, refund and expiry, but not every failure card | The record updates by webhook with no refresh; forged webhooks get 400 and replays are counted once |
+| Saved-list filters live on their own page (Saved lists), not inline on Contacts; wide tables scroll sideways inside their card on phones | Lists save, re-evaluate live and open from the sidebar; the page itself never scrolls sideways at 360 px |
+| Revoking Google access was not exercised on the live site; test workspaces cannot be deleted because audit history is append-only | Revocation is detected in code; empty test workspaces are isolated and harmless |
+
+Data survives a restart because everything is in Postgres: escalation timers are stored on the lead rows and swept on boot and every minute, and queued emails and retries are database-backed. A new person can start the app from the README (copy `.env.example`, `npm run migrate`, `npm run seed`, `npm run dev`).

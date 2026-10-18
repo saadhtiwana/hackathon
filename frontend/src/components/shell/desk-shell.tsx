@@ -10,7 +10,7 @@ import { apiFetch } from "@/lib/api/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/cn";
 import { useMe } from "@/components/session";
-import { Lockup, LogoMark } from "@/components/brand/logo";
+import { RelayMark } from "@/components/brand/relay-mark";
 import { paletteItems, primaryNav, settingsNav, type NavItem } from "@/components/shell/nav";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -44,17 +44,26 @@ async function countOpenLeads() {
   return open;
 }
 
+function Wordmark({ className }: { className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-2", className)}>
+      <RelayMark size={28} />
+      <span className="text-[19px] leading-none font-semibold tracking-[-0.02em] lowercase">relay</span>
+    </span>
+  );
+}
+
 function Brand({ rail }: { rail?: boolean }) {
   return (
     <div className="mb-5">
       <Link href="/dashboard" aria-label="Relay" className="flex h-9 items-center rounded-md px-2 hover:bg-surface-hover">
         {rail ? (
           <>
-            <LogoMark className="lg:hidden" />
-            <Lockup className="hidden lg:inline-flex" />
+            <RelayMark size={28} className="lg:hidden" />
+            <Wordmark className="hidden lg:inline-flex" />
           </>
         ) : (
-          <Lockup />
+          <Wordmark />
         )}
       </Link>
     </div>

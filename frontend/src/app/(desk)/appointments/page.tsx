@@ -1,11 +1,5 @@
-import { Placeholder } from "@/features/placeholder";
+import { AppointmentsList } from "@/features/appointments/appointments-list";
 
 export default function AppointmentsPage() {
-  return (
-    <Placeholder
-      title="Appointments"
-      description="Bookings on an employee's real calendar."
-      body="Upcoming appointments will list here after Google Calendar is connected."
-    />
-  );
+  return <AppointmentsList />;
 }

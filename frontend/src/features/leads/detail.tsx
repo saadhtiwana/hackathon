@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { format } from "date-fns";
 import { Check, UserRoundX } from "lucide-react";
 import { useMe } from "@/components/session";
+import { BookingDialog } from "@/features/appointments/booking-dialog";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
@@ -77,7 +78,12 @@ export function LeadDetail() {
       <PageHeader
         title={title}
         description={[contact?.phone, contact?.email].filter(Boolean).join(" · ") || undefined}
-        actions={<LeadActions lead={lead} isOwner={isOwner} canReassign={canReassign} />}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <LeadActions lead={lead} isOwner={isOwner} canReassign={canReassign} />
+            {lead.status !== "closed" && can(me.data, "crm.edit") ? <BookingDialog contactId={lead.contactId} contactName={title} opportunityId={lead.opportunityId ?? undefined} /> : null}
+          </div>
+        }
       />
 
       <div className={lead.status === "assigned" && lead.ackDeadline ? "mb-6 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]" : "mb-6"}>

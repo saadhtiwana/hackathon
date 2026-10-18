@@ -10,7 +10,7 @@ export type AssignmentReason = 'initial' | 'ack_expired' | 'manual' | 'owner_una
 
 export type EscalationKind = 'next_eligible' | 'backup' | 'manager';
 
-export type LeadSource = 'webform' | 'whatsapp' | 'manual';
+export type LeadSource = 'webform' | 'whatsapp' | 'manual' | 'discord';
 
 // Only one policy is implemented: acknowledged leads stay with an away owner, flagged, until idle or reassigned.
 export type AcknowledgedOnLeavePolicy = 'keep_flag_recover';

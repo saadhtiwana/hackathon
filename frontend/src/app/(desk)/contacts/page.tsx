@@ -1,11 +1,5 @@
-import { Placeholder } from "@/features/placeholder";
+import { ContactsPage } from "@/features/crm/contacts-page";
 
-export default function ContactsPage() {
-  return (
-    <Placeholder
-      title="Contacts"
-      description="People, their company, and every open opportunity."
-      body="Contact records will list here, with the full customer page one click away."
-    />
-  );
+export default function Page() {
+  return <ContactsPage />;
 }

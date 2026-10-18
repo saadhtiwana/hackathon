@@ -114,7 +114,58 @@ export function createLeadService(deps: ServiceDeps) {
     return lead;
   }
 
-  // Round-robin pick for intake and absence; nobody eligible leaves the lead stuck for a manager.
+  // Never ownerless: when nobody is eligible the lead goes to the designated manager, else the workspace Owner.
+  async function fallbackTarget(tx: Tx, workspaceId: string, rr: RulesRecord): Promise<{ userId: string; seconds: number } | null> {
+    const mgr = [...rr.rules.escalationLevels].reverse().find((l) => l.kind === 'manager' && l.userId);
+    const userId = mgr?.userId ?? (await repo.workspaceOwner?.(tx, workspaceId)) ?? null;
+    return userId ? { userId, seconds: mgr?.seconds ?? rr.rules.ackWindowSeconds } : null;
+  }
+
+  const FALLBACK_NOTE = 'No eligible employee: sent to manager';
+
+  async function assignToFallback(
+    tx: Tx,
+    fx: Fx[],
+    lead: LeadRecord,
+    rr: RulesRecord,
+    o: { reason: AssignmentReason; level: number; actorId: string | null; skipped: SkippedCandidate[]; now: Date },
+  ): Promise<LeadRecord | null> {
+    const target = await fallbackTarget(tx, lead.workspaceId, rr);
+    if (!target) return null;
+    const withHistory = { ...lead, ownerHistory: lead.ownerHistory.length || !lead.id ? lead.ownerHistory : await repo.ownerHistory(tx, lead.id) };
+    const assigned = applyAssignment(withHistory, target.userId, o.level, deadlineFrom(o.now, target.seconds), o.reason, o.now);
+    // At least two escalations so the lead shows in the recovery queue until someone acts.
+    const next = await write(tx, { ...assigned, acknowledgedAt: null, escalationCount: Math.max(assigned.escalationCount, 2) }, lead);
+    const assignmentId = await repo.openAssignment(tx, { workspaceId: lead.workspaceId, leadId: lead.id, userId: target.userId, reason: o.reason, level: o.level, at: o.now });
+    await ports.activity.record(tx, {
+      workspaceId: lead.workspaceId,
+      entity: { leadId: lead.id, contactId: lead.contactId },
+      type: 'lead_escalation',
+      actorId: null,
+      data: { assignmentId, fromUserId: lead.ownerId, toUserId: target.userId, level: o.level, kind: 'manager', fallback: true, note: FALLBACK_NOTE, skipped: o.skipped },
+    });
+    await ports.audit.record(tx, {
+      workspaceId: lead.workspaceId,
+      actorId: o.actorId,
+      action: 'lead.escalated',
+      targetType: 'lead',
+      targetId: lead.id,
+      before: snapshot(lead),
+      after: { ...snapshot(next), reason: o.reason, kind: 'manager', fallback: true, note: FALLBACK_NOTE, skipped: o.skipped },
+    });
+    if (target.userId !== lead.ownerId) {
+      await ports.outbox.enqueue(tx, {
+        workspaceId: lead.workspaceId,
+        kind: 'notify.escalation',
+        payload: { leadId: lead.id, toUserId: target.userId, fromUserId: lead.ownerId, source: lead.source, reason: o.reason === 'ack_expired' ? 'ack_expired' : 'no_eligible_employee', level: o.level, kind: 'manager', linkPath: `/leads/${lead.id}` },
+      });
+    }
+    fx.push({ workspaceId: lead.workspaceId, event: { type: 'lead.escalated', ids: { leadId: lead.id, ownerId: target.userId, previousOwnerId: lead.ownerId }, userIds: [target.userId] } });
+    fx.push({ workspaceId: lead.workspaceId, event: { type: 'recovery.changed', ids: { leadId: lead.id } } });
+    return next;
+  }
+
+  // Round-robin pick for intake and absence; nobody eligible sends the lead to the manager.
   async function autoAssign(
     tx: Tx,
     fx: Fx[],
@@ -131,6 +182,8 @@ export function createLeadService(deps: ServiceDeps) {
     if (fromUserId) await repo.closeAssignment(tx, lead.id, reason === 'owner_unavailable' ? 'owner_unavailable' : 'reassigned', now);
 
     if (!pick.userId) {
+      const fb = await assignToFallback(tx, fx, lead, rr, { reason, level: lead.escalationLevel, actorId, skipped: pick.skipped, now });
+      if (fb) return fb;
       const next = await write(tx, { ...applyStuck(lead, lead.escalationLevel), acknowledgedAt: null }, lead);
       await ports.activity.record(tx, {
         workspaceId: lead.workspaceId,
@@ -302,6 +355,8 @@ export function createLeadService(deps: ServiceDeps) {
     await repo.closeAssignment(tx, lead.id, 'escalated', now);
 
     if (!step.targetUserId) {
+      const fb = await assignToFallback(tx, fx, withHistory, rr, { reason: 'ack_expired', level: step.level, actorId: null, skipped, now });
+      if (fb) return 'escalated';
       const next = await write(tx, { ...applyStuck(withHistory, step.level), acknowledgedAt: null }, lead);
       await ports.activity.record(tx, {
         workspaceId: lead.workspaceId,
@@ -680,6 +735,10 @@ export function createLeadService(deps: ServiceDeps) {
       const withReasons: { lead: ListedLead; reasons: RecoveryReason[] }[] = items
         .map((lead) => ({ lead, reasons: recoveryReasons(lead, rules, now) }))
         .filter((x) => x.reasons.length > 0);
+      const fallback = (await repo.fallbackMarkers?.(workspaceId, withReasons.map((x) => x.lead.id))) ?? new Set<string>();
+      for (const x of withReasons) {
+        if (fallback.has(x.lead.id)) x.reasons = [{ code: 'escalated_multiple', text: FALLBACK_NOTE }, ...x.reasons.filter((r) => r.code !== 'escalated_multiple')];
+      }
       return { items: withReasons, nextCursor };
     },
 

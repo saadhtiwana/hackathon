@@ -7,6 +7,7 @@ import {
   leadAssignments,
   leads,
   memberships,
+  roles,
   users,
   workspaces,
 } from '../../core/db/schema/index.js';
@@ -90,6 +91,10 @@ export interface LeadRepo {
   saveCursor(tx: Tx, workspaceId: string, cursor: string | null): Promise<void>;
   saveRules(tx: Tx, workspaceId: string, rules: AssignmentRules): Promise<void>;
   candidates(tx: Tx, workspaceId: string): Promise<Candidate[]>;
+  // Last resort owner when nobody is eligible: the workspace Owner.
+  workspaceOwner?(tx: Tx, workspaceId: string): Promise<string | null>;
+  // Leads whose current owner was set by the no-eligible-employee fallback.
+  fallbackMarkers?(workspaceId: string, leadIds: string[]): Promise<Set<string>>;
   member(q: DbOrTx | null, workspaceId: string, userId: string): Promise<MemberRecord | null>;
   ownerHistory(tx: Tx, leadId: string): Promise<string[]>;
   openAssignment(
@@ -282,6 +287,26 @@ export const pgLeadRepo: LeadRepo = {
       .leftJoin(open, eq(open.ownerId, memberships.userId))
       .where(and(eq(memberships.workspaceId, workspaceId), eq(memberships.active, true)));
     return rows.map((r) => ({ userId: r.userId, status: r.status, openLeadCount: r.n ?? 0 }));
+  },
+
+  async workspaceOwner(tx, workspaceId) {
+    const [r] = await tx
+      .select({ userId: memberships.userId })
+      .from(memberships)
+      .innerJoin(roles, eq(roles.id, memberships.roleId))
+      .where(and(eq(memberships.workspaceId, workspaceId), eq(memberships.active, true), eq(roles.baseLevel, 'owner')))
+      .limit(1);
+    return r?.userId ?? null;
+  },
+
+  async fallbackMarkers(workspaceId, leadIds) {
+    if (!leadIds.length) return new Set<string>();
+    const rows = await db
+      .selectDistinctOn([activities.leadId], { leadId: activities.leadId, data: activities.data })
+      .from(activities)
+      .where(and(eq(activities.workspaceId, workspaceId), inArray(activities.leadId, leadIds), inArray(activities.type, ['lead_escalation', 'assignment'])))
+      .orderBy(activities.leadId, desc(activities.createdAt));
+    return new Set(rows.filter((r) => (r.data as { fallback?: boolean })?.fallback === true).map((r) => r.leadId!));
   },
 
   async member(q, workspaceId, userId) {

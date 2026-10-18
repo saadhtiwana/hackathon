@@ -50,13 +50,14 @@ describe('createLead', () => {
     ]);
   });
 
-  it('with nobody eligible the lead is stuck and shows in the recovery queue', async () => {
+  it('with nobody eligible the lead goes to the manager and shows in the recovery queue', async () => {
     const w = world([['a', 'offline'], ['b', 'busy']]);
     const l = await w.newLead();
-    expect(l).toMatchObject({ state: 'unassigned', ownerId: null });
+    expect(l).toMatchObject({ state: 'assigned', ownerId: 'mg' });
     const q = await w.svc.recoveryQueue(W, { userId: 'mg', canSeeAll: true });
-    expect(q.items.map((i) => [i.lead.id, i.reasons[0].code])).toEqual([[l.id, 'unacked_overdue']]);
-    expect(w.audits.map((a) => a.action)).toContain('lead.stuck');
+    expect(q.items.map((i) => [i.lead.id, i.reasons[0].code])).toEqual([[l.id, 'escalated_multiple']]);
+    expect(w.audits.map((a) => a.action)).toContain('lead.escalated');
+    expect(w.jobs.map((j) => j.kind)).toContain('notify.escalation');
   });
 });
 
@@ -89,7 +90,7 @@ describe('acknowledge and activity', () => {
 });
 
 describe('sweep', () => {
-  it('escalates through the chain with per-level windows, then gets stuck', async () => {
+  it('escalates through the chain with per-level windows, then stays with the manager', async () => {
     const w = world();
     const l = await w.newLead();
     expect(l.ownerId).toBe('a');
@@ -102,18 +103,19 @@ describe('sweep', () => {
     expect(w.state.leads.get(l.id)).toMatchObject({ ownerId: 'bk', escalationLevel: 2, ackDeadline: at(90) });
     await w.svc.sweep(at(90));
     expect(w.state.leads.get(l.id)).toMatchObject({ ownerId: 'mg', escalationLevel: 3, escalationCount: 3 });
-    expect(await w.svc.sweep(at(120))).toEqual({ escalated: 0, recovered: 1 });
-    expect(w.state.leads.get(l.id)).toMatchObject({ state: 'unassigned', ownerId: null });
+    // chain exhausted: the lead stays with the manager instead of becoming ownerless
+    expect(await w.svc.sweep(at(120))).toEqual({ escalated: 1, recovered: 0 });
+    expect(w.state.leads.get(l.id)).toMatchObject({ state: 'assigned', ownerId: 'mg' });
 
     const custody = w.state.assignments.filter((a) => a.leadId === l.id).map((a) => [a.userId, a.reason, a.endReason]);
-    expect(custody).toEqual([
+    expect(custody.slice(0, 4)).toEqual([
       ['a', 'initial', 'escalated'],
       ['b', 'ack_expired', 'escalated'],
       ['bk', 'ack_expired', 'escalated'],
       ['mg', 'ack_expired', 'escalated'],
     ]);
     const q = await w.svc.recoveryQueue(W, { userId: 'mg', canSeeAll: true });
-    expect(q.items[0].reasons.map((r) => r.code)).toEqual(['unacked_overdue', 'escalated_multiple']);
+    expect(q.items[0].reasons.map((r) => r.code)).toEqual(['escalated_multiple']);
   });
 
   it('enqueues the external escalation notice with the lead details', async () => {

@@ -31,23 +31,23 @@ export interface InboundDm {
 
 type ContactRow = typeof contacts.$inferSelect;
 
-async function conversationFor(tx: Tx, ws: string, contact: ContactRow, channelId: string | null) {
-  const [ex] = await tx.select().from(conversations).where(and(eq(conversations.workspaceId, ws), eq(conversations.contactId, contact.id), eq(conversations.channel, CHANNEL)));
+export async function conversationFor(tx: Tx, ws: string, contact: ContactRow, channelId: string | null, channel: string = CHANNEL) {
+  const [ex] = await tx.select().from(conversations).where(and(eq(conversations.workspaceId, ws), eq(conversations.contactId, contact.id), eq(conversations.channel, channel)));
   if (ex) {
     if (channelId && ex.externalChannelId !== channelId) await tx.update(conversations).set({ externalChannelId: channelId }).where(eq(conversations.id, ex.id));
     return ex;
   }
-  const [c] = await tx.insert(conversations).values({ workspaceId: ws, contactId: contact.id, ownerId: contact.ownerId, channel: CHANNEL, externalChannelId: channelId }).returning();
+  const [c] = await tx.insert(conversations).values({ workspaceId: ws, contactId: contact.id, ownerId: contact.ownerId, channel, externalChannelId: channelId }).returning();
   return c!;
 }
 
 // Stores one customer message. Returns false when this Discord message id was already stored (I1.8).
-export async function storeInbound(tx: Tx, ws: string, contact: ContactRow, channelId: string | null, messageId: string, body: string, at?: Date) {
-  const convo = await conversationFor(tx, ws, contact, channelId);
+export async function storeInbound(tx: Tx, ws: string, contact: ContactRow, channelId: string | null, messageId: string, body: string, at?: Date, channel: string = CHANNEL) {
+  const convo = await conversationFor(tx, ws, contact, channelId, channel);
   const [m] = await tx.insert(messages).values({ workspaceId: ws, conversationId: convo.id, providerSid: messageId, direction: 'in', body, status: 'received', createdAt: at ?? new Date() }).onConflictDoNothing().returning({ id: messages.id });
   if (!m) return null;
   await tx.update(conversations).set({ lastMessageAt: at ?? new Date() }).where(eq(conversations.id, convo.id));
-  await activity.record(tx, { workspaceId: ws, entity: { contactId: contact.id }, type: 'message', actorId: null, data: { conversationId: convo.id, messageId: m.id, direction: 'in', channel: CHANNEL } });
+  await activity.record(tx, { workspaceId: ws, entity: { contactId: contact.id }, type: 'message', actorId: null, data: { conversationId: convo.id, messageId: m.id, direction: 'in', channel } });
   return { conversationId: convo.id, messageId: m.id };
 }
 
@@ -151,32 +151,37 @@ export async function getConversation(a: AuthContext, id: string, q: { limit: nu
 
 // ---- outbound ----
 
-async function assertCanMessage(contact: ContactRow) {
+function assertCanMessage(contact: ContactRow, channel: string = CHANNEL) {
   if (contact.optedOut) throw conflict(`${contact.name} opted out of messages${contact.optOutReason ? `: ${contact.optOutReason}` : ''}`, 'Ask them to message you first, or clear the opt-out on the contact if they asked to be contacted again', 'opted_out', { reason: contact.optOutReason });
+  if (channel === 'email') {
+    if (!contact.email) throw conflict(`${contact.name} has no email address on file`, 'Add an email address to the contact first', 'no_email');
+    return;
+  }
   if (!contact.discordUserId) throw conflict(`${contact.name} has no Discord account on file`, 'They need to message the bot or use /enquire in the customer server first', 'no_discord_id');
 }
 
 async function queueOutbound(tx: Tx, a: AuthContext, convo: typeof conversations.$inferSelect, contact: ContactRow, body: string, retryOf?: string) {
+  const channel = convo.channel;
   const [m] = await tx.insert(messages).values({ workspaceId: a.workspaceId, conversationId: convo.id, direction: 'out', body, status: 'queued', sentBy: a.userId, retryOf: retryOf ?? null }).returning();
   await tx.update(conversations).set({ lastMessageAt: new Date() }).where(eq(conversations.id, convo.id));
-  await outbox.enqueue(tx, { workspaceId: a.workspaceId, kind: 'discord.send', payload: { messageId: m!.id } });
+  await outbox.enqueue(tx, { workspaceId: a.workspaceId, kind: `${channel}.send`, payload: { messageId: m!.id } });
   // A message from the owner counts as an acknowledgement of the open lead.
-  await activity.record(tx, { workspaceId: a.workspaceId, entity: { contactId: contact.id }, type: 'message', actorId: a.userId, data: { conversationId: convo.id, messageId: m!.id, direction: 'out', channel: CHANNEL } });
+  await activity.record(tx, { workspaceId: a.workspaceId, entity: { contactId: contact.id }, type: 'message', actorId: a.userId, data: { conversationId: convo.id, messageId: m!.id, direction: 'out', channel } });
   return m!;
 }
 
 export async function sendMessage(a: AuthContext, conversationId: string, body: string) {
   const { convo, contact } = await accessible(a, conversationId);
-  await assertCanMessage(contact);
+  assertCanMessage(contact, convo.channel);
   const m = await db.transaction((tx) => queueOutbound(tx, a, convo, contact, body));
   realtime.publish(a.workspaceId, { type: 'message.status', ids: { conversationId: convo.id, messageId: m.id } });
   return m;
 }
 
-export async function sendToContact(a: AuthContext, contactId: string, body: string) {
+export async function sendToContact(a: AuthContext, contactId: string, body: string, channel: string = CHANNEL) {
   const contact = await getOr404(db, contacts, a.workspaceId, contactId, 'Contact');
-  await assertCanMessage(contact);
-  const m = await db.transaction(async (tx) => queueOutbound(tx, a, await conversationFor(tx, a.workspaceId, contact, null), contact, body));
+  assertCanMessage(contact, channel);
+  const m = await db.transaction(async (tx) => queueOutbound(tx, a, await conversationFor(tx, a.workspaceId, contact, null, channel), contact, body));
   realtime.publish(a.workspaceId, { type: 'message.status', ids: { messageId: m.id, contactId } });
   return m;
 }
@@ -186,13 +191,13 @@ export async function retryMessage(a: AuthContext, messageId: string) {
   if (!orig) throw notFound('Message');
   const { convo, contact } = await accessible(a, orig.conversationId);
   if (orig.status !== 'failed' || orig.direction !== 'out') throw conflict('Only a failed outgoing message can be retried', undefined, 'not_retryable');
-  await assertCanMessage(contact);
+  assertCanMessage(contact, convo.channel);
   const m = await db.transaction((tx) => queueOutbound(tx, a, convo, contact, orig.body, orig.id));
   realtime.publish(a.workspaceId, { type: 'message.status', ids: { conversationId: convo.id, messageId: m.id } });
   return m;
 }
 
-async function setStatus(ws: string, m: typeof messages.$inferSelect, patch: Partial<typeof messages.$inferInsert>) {
+export async function setStatus(ws: string, m: typeof messages.$inferSelect, patch: Partial<typeof messages.$inferInsert>) {
   await db.update(messages).set(patch).where(eq(messages.id, m.id));
   realtime.publish(ws, { type: 'message.status', ids: { conversationId: m.conversationId, messageId: m.id } });
 }

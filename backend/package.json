@@ -15,6 +15,7 @@
     "seed": "tsx src/core/db/seed.ts",
     "connect:stripe": "tsx src/scripts/connect-stripe.ts",
     "connect:discord": "tsx src/scripts/connect-discord.ts",
+    "link:google": "tsx src/scripts/google-links.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

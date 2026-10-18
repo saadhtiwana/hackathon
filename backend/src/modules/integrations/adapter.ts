@@ -1,5 +1,5 @@
-export type ProviderId = 'stripe' | 'discord' | 'google_calendar';
-export type DbProvider = 'stripe' | 'discord' | 'google';
+export type ProviderId = 'stripe' | 'discord' | 'google_calendar' | 'email';
+export type DbProvider = 'stripe' | 'discord' | 'google' | 'gmail';
 
 export interface AdapterContext {
   workspaceId: string;
@@ -25,6 +25,8 @@ export interface ProviderAdapter {
   label: string;
   // Per-user OAuth providers connect each employee separately instead of storing a workspace secret.
   perUser?: boolean;
+  // Providers connected through a Google consent screen instead of pasted credentials.
+  oauthPurpose?: 'calendar' | 'mailbox';
   connect(ctx: AdapterContext, input: unknown): Promise<ConnectResult>;
   // Runs once the connection is saved (for example to start a long-lived listener).
   afterConnect?(ctx: AdapterContext, config: Record<string, unknown>): Promise<void>;

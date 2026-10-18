@@ -8,7 +8,7 @@ import { sha256 } from '../../../core/crypto/index.js';
 import { env } from '../../../core/env.js';
 import { asyncHandler } from '../../../core/errors.js';
 import { integrationEvents } from '../../../core/integration-events/index.js';
-import { outbox, type OutboxJob } from '../../../core/outbox/index.js';
+import { type OutboxJob } from '../../../core/outbox/index.js';
 import { requireAuth } from '../../../core/auth/sessions.js';
 import { requirePermission } from '../../../core/rbac/index.js';
 import { ProviderError } from '../errors.js';
@@ -56,21 +56,20 @@ async function deliver(job: OutboxJob, type: 'alert.escalation' | 'alert.lead_as
   }
 }
 
-outbox.registerHandler('notify.escalation', (job) => {
+export const discordEscalation = (job: OutboxJob) => {
   const p = job.payload as { reason?: string; level?: number; kind?: string };
   return deliver(job, 'alert.escalation', ({ contactName, source, link }) =>
     [`Lead escalated to you: ${contactName}`, `Source: ${source}`, `Why: ${p.reason === 'ack_expired' ? 'the acknowledgement window ran out' : (p.reason ?? 'escalated')}${p.kind ? `, ${KIND_TEXT[p.kind] ?? p.kind}` : ''}${p.level ? ` (level ${p.level})` : ''}`, `Open: ${link}`].join('\n'));
-});
+};
 
-outbox.registerHandler('notify.lead_assigned', (job) =>
-  deliver(job, 'alert.lead_assigned', ({ contactName, source, link }) => [`New lead assigned to you: ${contactName}`, `Source: ${source}`, `Acknowledge it before the window runs out: ${link}`].join('\n')),
-);
+export const discordAssigned = (job: OutboxJob) =>
+  deliver(job, 'alert.lead_assigned', ({ contactName, source, link }) => [`New lead assigned to you: ${contactName}`, `Source: ${source}`, `Acknowledge it before the window runs out: ${link}`].join('\n'));
 
 // ---- admin visibility (I4.4) ----
 
-export async function listAlerts(ws: string) {
+export async function listAlerts(ws: string, provider: 'discord' | 'gmail' = 'discord') {
   const [events, jobs] = await Promise.all([
-    db.select().from(eventsTable).where(and(eq(eventsTable.workspaceId, ws), eq(eventsTable.provider, 'discord'), like(eventsTable.type, 'alert.%'))).orderBy(desc(eventsTable.createdAt)).limit(100),
+    db.select().from(eventsTable).where(and(eq(eventsTable.workspaceId, ws), eq(eventsTable.provider, provider), like(eventsTable.type, 'alert.%'))).orderBy(desc(eventsTable.createdAt)).limit(100),
     db.select().from(outboxJobs).where(and(eq(outboxJobs.workspaceId, ws), inArray(outboxJobs.kind, ['notify.escalation', 'notify.lead_assigned']), inArray(outboxJobs.status, ['pending', 'running', 'failed']))).orderBy(desc(outboxJobs.createdAt)).limit(100),
   ]);
   const names = new Map((await db.select({ id: users.id, name: users.name }).from(users)).map((u) => [u.id, u.name]));

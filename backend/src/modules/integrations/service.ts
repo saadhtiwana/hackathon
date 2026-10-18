@@ -11,9 +11,10 @@ import type { AuthContext } from '../../core/auth/context.js';
 import type { AdapterContext, ProviderAdapter } from './adapter.js';
 import { ProviderError } from './errors.js';
 import { getAdapter, listAdapters } from './registry.js';
-import { consentUrl, googleConfigured } from './google/adapter.js';
+import { consentUrl, googleConfigured, signState } from './google/oauth.js';
+import { userCalendarStore } from './google/tokens.js';
+import { revokeToken } from './google/oauth.js';
 import { gateways } from './discord/gateway.js';
-import { randomToken } from '../../core/crypto/index.js';
 
 const mask = (last4: string | null) => (last4 ? `••••${last4}` : null);
 
@@ -74,7 +75,9 @@ export async function listIntegrations(a: AuthContext) {
       };
     }
     const row = rows.find((r) => r.provider === ad.dbProvider);
+    const account = ad.id === 'email' && row?.encryptedConfig ? (() => { try { return JSON.parse(decrypt(row.encryptedConfig!)).email ?? null; } catch { return null; } })() : undefined;
     return {
+      ...(account !== undefined ? { account } : {}),
       provider: ad.id, label: ad.label, perUser: false,
       status: row?.status ?? 'not_connected',
       lastOkAt: row?.lastOkAt ?? null, lastErrorAt: row?.lastErrorAt ?? null, lastError: row?.lastError ?? null,
@@ -95,9 +98,9 @@ export async function connect(a: AuthContext, id: string, input: unknown) {
   const ws = a.workspaceId;
   const ctx: AdapterContext = { workspaceId: ws, actorId: a.userId, config: await loadConfig(ws, ad) };
 
-  if (ad.perUser) {
-    const state = randomToken(16);
-    return { authUrl: consentUrl(state), state };
+  if (ad.oauthPurpose) {
+    const state = signState({ userId: a.userId, workspaceId: ws, purpose: ad.oauthPurpose, ttlMs: 15 * 60_000 });
+    return { authUrl: consentUrl(ad.oauthPurpose, state) };
   }
 
   const before = await getRow(ws, ad);
@@ -150,6 +153,12 @@ export async function disconnect(a: AuthContext, id: string) {
   const ad = adapterOr404(id);
   const ws = a.workspaceId;
   if (ad.perUser) {
+    try {
+      const tokens = await userCalendarStore(ws, a.userId).load();
+      if (tokens) await revokeToken(tokens.refreshToken);
+    } catch {
+      /* already unusable; still remove it locally */
+    }
     await db.delete(userConnections).where(and(eq(userConnections.workspaceId, ws), eq(userConnections.userId, a.userId), eq(userConnections.provider, ad.dbProvider)));
     await audit.record(db, { workspaceId: ws, actorId: a.userId, action: 'integration.disconnected', targetType: 'integration', targetId: ad.id, before: { scope: 'own account' } });
     return;

@@ -19,6 +19,10 @@ import { stripeWebhookRouter } from './modules/payments/webhook.js';
 import { discordInteractionsRouter } from './modules/integrations/discord/interactions.js';
 import { discordRouter } from './modules/integrations/discord/alerts.js';
 import { conversationsRouter } from './modules/conversations/routes.js';
+import { googleRouter } from './modules/integrations/google/routes.js';
+import { notificationsRouter } from './modules/integrations/google/alerts.js';
+import { appointmentsRouter } from './modules/appointments/routes.js';
+import './modules/conversations/email.js';
 
 export function createApp() {
   const app = express();
@@ -55,6 +59,9 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(googleRouter);
+  api.use(notificationsRouter);
+  api.use(appointmentsRouter);
   api.use(discordRouter);
   api.use(integrationsRouter);
   api.use(conversationsRouter);

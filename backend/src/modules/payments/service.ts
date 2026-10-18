@@ -196,12 +196,12 @@ export async function getPayment(ws: string, id: string) {
 }
 
 
-// Sends the Checkout link to the customer over Discord (I2.1).
+// Emails the Checkout link to the customer from the agency mailbox (I2.1).
 export async function sendPaymentLink(a: AuthContext, id: string) {
   const p = await getOr404(db, payments, a.workspaceId, id, 'Payment');
   if (p.status !== 'requested' || !p.url) throw conflict('Only an open payment request with a link can be sent', undefined, 'not_sendable');
   const amount = `${(p.amountCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })} ${p.currency}`;
-  const message = await sendToContact(a, p.contactId, `Payment request for ${amount}${p.description ? ` (${p.description})` : ''}. Pay securely here: ${p.url}`);
-  await activity.record(db, { workspaceId: a.workspaceId, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId: a.userId, data: { paymentId: p.id, event: 'link_sent', channel: 'discord', messageId: message.id } });
+  const message = await sendToContact(a, p.contactId, `Payment request for ${amount}${p.description ? ` (${p.description})` : ''}.\n\nPay securely here: ${p.url}`, 'email');
+  await activity.record(db, { workspaceId: a.workspaceId, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId: a.userId, data: { paymentId: p.id, event: 'link_sent', channel: 'email', messageId: message.id } });
   return { message };
 }

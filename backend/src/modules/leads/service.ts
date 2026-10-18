@@ -234,6 +234,12 @@ export function createLeadService(deps: ServiceDeps) {
       before: snapshot(lead),
       after: { ...snapshot(next), reason, skipped: pick.skipped },
     });
+    // The new owner hears about it outside the app too, not only when it later escalates.
+    await ports.outbox.enqueue(tx, {
+      workspaceId: lead.workspaceId,
+      kind: 'notify.lead_assigned',
+      payload: { leadId: lead.id, toUserId: pick.userId, fromUserId, source: lead.source, reason, linkPath: `/leads/${lead.id}` },
+    });
     fx.push({
       workspaceId: lead.workspaceId,
       event: {

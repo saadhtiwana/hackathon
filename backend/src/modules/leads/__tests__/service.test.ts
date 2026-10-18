@@ -124,7 +124,7 @@ describe('sweep', () => {
     const w = world();
     const l = await w.newLead();
     await w.svc.sweep(at(30));
-    expect(w.jobs).toEqual([
+    expect(w.jobs.filter((j) => j.kind === 'notify.escalation')).toEqual([
       {
         workspaceId: W,
         kind: 'notify.escalation',

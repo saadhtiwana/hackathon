@@ -31,8 +31,8 @@ function findTarget(
   }
 
   // backup and manager must be Available but are exempt from the open-lead cap
-  const designated = new Set(level.userIds ?? []);
-  const hit = sorted.find((c) => designated.has(c.userId) && c.userId !== lead.ownerId && c.status === 'available');
+  if (!level.userId || level.userId === lead.ownerId) return null;
+  const hit = sorted.find((c) => c.userId === level.userId && c.status === 'available');
   return hit?.userId ?? null;
 }
 
@@ -47,14 +47,19 @@ export function nextStep(
     return { targetUserId: null, level: lead.escalationLevel, reason: 'not_pending', deadline: null };
   }
 
-  const levels = escalationLevels.filter((l) => l.level > lead.escalationLevel).sort((a, b) => a.level - b.level);
-  for (const l of levels) {
+  // lead.escalationLevel is the 1-based level reached so far (0 = initial window), so the next one is at that index
+  for (let i = lead.escalationLevel; i < escalationLevels.length; i++) {
+    const l = escalationLevels[i];
     const target = findTarget(l.kind, l, lead, candidates, rules);
-    if (target) return { targetUserId: target, level: l.level, reason: l.kind, deadline: deadlineFrom(now, l.seconds) };
+    if (target) return { targetUserId: target, level: i + 1, reason: l.kind, deadline: deadlineFrom(now, l.seconds) };
   }
 
-  const last = levels.length ? levels[levels.length - 1].level : lead.escalationLevel;
-  return { targetUserId: null, level: last, reason: 'no_candidate', deadline: null };
+  return {
+    targetUserId: null,
+    level: Math.max(escalationLevels.length, lead.escalationLevel),
+    reason: 'no_candidate',
+    deadline: null,
+  };
 }
 
 // A timer may fire only if the lead is still pending and its version matches the one the timer was armed with.

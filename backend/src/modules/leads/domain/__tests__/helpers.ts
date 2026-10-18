@@ -11,6 +11,7 @@ export const cand = (userId: string, status: MemberStatus = 'available', openLea
 
 export const lead = (over: Partial<Lead> = {}): Lead => ({
   id: 'L1',
+  source: 'webform',
   state: 'assigned',
   ownerId: 'a',
   version: 1,

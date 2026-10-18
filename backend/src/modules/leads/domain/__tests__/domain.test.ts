@@ -3,7 +3,7 @@ import { onAvailabilityChange } from '../availability.js';
 import { pickAssignee } from '../assign.js';
 import { isEligible } from '../eligibility.js';
 import { applyAssignment, nextStep, shouldFire } from '../escalate.js';
-import { isEscalation, timeToFirstResponse } from '../metrics.js';
+import { countsAsAcknowledgement, isEscalation, timeToFirstResponse } from '../metrics.js';
 import { recoveryReasons } from '../recovery.js';
 import type { EscalationLevel } from '../types.js';
 import { at, cand, lead, T0 } from './helpers.js';
@@ -62,9 +62,9 @@ describe('pickAssignee', () => {
 
 describe('nextStep', () => {
   const levels: EscalationLevel[] = [
-    { level: 1, kind: 'next_eligible', seconds: 30 },
-    { level: 2, kind: 'backup', seconds: 45, userIds: ['bk'] },
-    { level: 3, kind: 'manager', seconds: 60, userIds: ['mg'] },
+    { kind: 'next_eligible', seconds: 30 },
+    { kind: 'backup', seconds: 45, userId: 'bk' },
+    { kind: 'manager', seconds: 60, userId: 'mg' },
   ];
   const pool = [cand('a'), cand('b'), cand('bk'), cand('mg')];
 
@@ -93,7 +93,12 @@ describe('nextStep', () => {
 
   it('is stuck when no candidate exists', () => {
     const s = nextStep(lead(), levels, [cand('a'), cand('bk', 'on_leave'), cand('mg', 'offline'), cand('b', 'busy')], at(30), rules);
-    expect(s).toMatchObject({ targetUserId: null, reason: 'no_candidate', deadline: null });
+    expect(s).toMatchObject({ targetUserId: null, level: 3, reason: 'no_candidate', deadline: null });
+  });
+
+  it('skips a backup level whose designated user is the current owner', () => {
+    const s = nextStep(lead({ ownerId: 'bk', escalationLevel: 1 }), levels, [cand('bk'), cand('mg')], at(30), rules);
+    expect(s).toMatchObject({ targetUserId: 'mg', level: 3, reason: 'manager', deadline: at(90) });
   });
 
   it('does not step a lead that is no longer pending', () => {
@@ -203,6 +208,13 @@ describe('metrics', () => {
     expect(isEscalation('manual')).toBe(false);
     expect(isEscalation('owner_unavailable')).toBe(false);
     expect(isEscalation('initial')).toBe(false);
+  });
+
+  it('treats only recorded lead actions as acknowledgement', () => {
+    for (const t of ['lead_ack', 'note', 'message', 'call_log', 'stage_change', 'appointment']) {
+      expect(countsAsAcknowledgement(t)).toBe(true);
+    }
+    for (const t of ['assignment', 'field_edit', 'payment', 'lead_escalation']) expect(countsAsAcknowledgement(t)).toBe(false);
   });
 });
 

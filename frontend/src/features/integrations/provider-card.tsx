@@ -46,7 +46,7 @@ export function ProviderCard({ item, canManage, retired }: { item: Integration; 
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] font-semibold">{item.label}</h2>
           <p className="text-[13px] text-text-muted">{retired ? "No longer used. Customer messaging moved to email." : item.limits.summary}</p>
-          {(item as { agencyAddress?: string | null }).agencyAddress ? (
+          {item.provider === "email" && (item as { agencyAddress?: string | null }).agencyAddress ? (
             <p className="mt-1 text-[12px] text-text-muted">
               Customers write to <span className="font-mono">{(item as { agencyAddress?: string | null }).agencyAddress}</span>
             </p>

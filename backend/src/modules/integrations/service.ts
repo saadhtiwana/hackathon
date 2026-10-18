@@ -53,7 +53,7 @@ export async function listIntegrations(a: AuthContext) {
   const ws = a.workspaceId;
   const rows = await db.select().from(integrationConnections).where(eq(integrationConnections.workspaceId, ws));
   const errors = await db
-    .select({ provider: integrationEvents.provider, type: integrationEvents.type, error: integrationEvents.error, createdAt: integrationEvents.createdAt })
+    .select({ provider: integrationEvents.provider, type: integrationEvents.type, error: integrationEvents.error, result: integrationEvents.result, createdAt: integrationEvents.createdAt })
     .from(integrationEvents)
     .where(and(eq(integrationEvents.workspaceId, ws)))
     .orderBy(desc(integrationEvents.createdAt))
@@ -62,7 +62,7 @@ export async function listIntegrations(a: AuthContext) {
 
   return listAdapters().map((ad) => {
     const lim = ad.describeLimits();
-    const recentErrors = errors.filter((e) => e.provider === ad.dbProvider && e.error).slice(0, 5).map((e) => ({ type: e.type, message: e.error, at: e.createdAt }));
+    const recentErrors = errors.filter((e) => e.provider === ad.dbProvider && e.error && e.result === 'error').slice(0, 5).map((e) => ({ type: e.type, message: e.error, at: e.createdAt }));
     if (ad.perUser) {
       const ok = userConns.filter((u) => u.status === 'connected' && !u.needsReconnect);
       const bad = userConns.filter((u) => u.needsReconnect || u.status === 'error');

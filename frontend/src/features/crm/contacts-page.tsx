@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useMe } from "@/components/session";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +39,12 @@ export function ContactsPage() {
   const me = useMe();
   const toast = useToast();
   const ready = me.isSuccess;
+  // dashboard search links arrive as /contacts?q=...
   const [q, setQ] = useState("");
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get("q");
+    if (v) setQ(v);
+  }, []);
   const [ownerId, setOwnerId] = useState("all");
   const [companyId, setCompanyId] = useState("all");
   const [tagId, setTagId] = useState("all");

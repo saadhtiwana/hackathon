@@ -109,7 +109,13 @@ export function LeadDetail() {
           {lead.status === "assigned" && lead.ackDeadline ? (
             <Countdown deadline={lead.ackDeadline} startedAt={lead.assignedAt} />
           ) : (
-            <span className="text-[13px] text-text-muted">{lead.status === "acknowledged" ? "Acknowledged" : "–"}</span>
+            <span className="text-[13px] text-text-muted">
+              {lead.status === "acknowledged" || lead.firstAcknowledgedAt
+                ? `Acknowledged by ${nameOf(lead.ownerId)}${lead.ownerId === myId ? " (you)" : ""} at ${clock(lead.acknowledgedAt ?? lead.firstAcknowledgedAt!)}${
+                    lead.firstAssignedAt && lead.firstAcknowledgedAt ? ` · first response ${mmss((new Date(lead.firstAcknowledgedAt).getTime() - new Date(lead.firstAssignedAt).getTime()) / 1000)}` : ""
+                  }`
+                : "–"}
+            </span>
           )}
         </Fact>
         <Fact label="Source">
@@ -153,27 +159,23 @@ export function LeadDetail() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="grid gap-4">
         <Card>
           <CardHeader title="Custody chain" description="Everyone who has held this lead, and why it moved." />
           <div className="p-5">
             {assignments.length ? (
-              <CustodyChain assignments={assignments} />
+              <CustodyChain assignments={assignments} nameOf={nameOf} />
             ) : (
               <p className="text-[13px] text-text-muted">Nobody has held this lead yet.</p>
             )}
-          </div>
-        </Card>
-        <Card>
-          <CardHeader title="Skipped" description="Passed over by round-robin or escalation." />
-          <div className="p-5">
-            <SkippedList assignments={assignments} nameOf={nameOf} />
           </div>
         </Card>
       </div>
     </>
   );
 }
+
+const mmss = (sec: number) => `${String(Math.floor(Math.max(0, sec) / 60)).padStart(2, "0")}:${String(Math.floor(Math.max(0, sec) % 60)).padStart(2, "0")}`;
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -184,7 +186,10 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-function CustodyChain({ assignments }: { assignments: Assignment[] }) {
+// Only reasons a person can act on; "already had it" is noise and hidden.
+const MEANINGFUL = new Set(["on_leave", "busy", "offline", "at_capacity"]);
+
+function CustodyChain({ assignments, nameOf }: { assignments: Assignment[]; nameOf: (id: string) => string }) {
   const now = useServerNow();
   return (
     <Timeline>
@@ -200,7 +205,20 @@ function CustodyChain({ assignments }: { assignments: Assignment[] }) {
             key={a.id}
             title={assignmentTitle(a.reason, a.level, a.userName)}
             meta={clock(a.assignedAt)}
-            body={held}
+            body={
+              <>
+                {held}
+                {(() => {
+                  const seen = new Set<string>();
+                  const skips = a.skipped.filter((x) => MEANINGFUL.has(x.reason) && !seen.has(x.userId) && seen.add(x.userId));
+                  return skips.length ? (
+                    <span className="mt-1 block text-[12px] text-text-muted">
+                      Skipped: {skips.map((x) => `${nameOf(x.userId)} (${skipLabel[x.reason] ?? x.reason})`).join(", ")}
+                    </span>
+                  ) : null;
+                })()}
+              </>
+            }
             current={!a.endedAt}
             avatar={<Avatar name={a.userName} id={a.userId} size="md" />}
           />

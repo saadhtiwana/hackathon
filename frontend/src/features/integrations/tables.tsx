@@ -15,7 +15,7 @@ import { useToast } from "@/components/ui/toast";
 import { useAlerts, useCalendarPeople, useConnectLink, useSyncHistory, type Alert, type CalendarMember, type SyncEvent } from "./api";
 
 const t = (iso: string) => format(new Date(iso), "d MMM, HH:mm:ss");
-const resultTone = (r: string) => (r === "ok" ? "ok" : r === "duplicate" ? "neutral" : "signal") as "ok" | "neutral" | "signal";
+const resultTone = (r: string) => (r === "ok" ? "ok" : r === "duplicate" || r === "rejected" ? "neutral" : "signal") as "ok" | "neutral" | "signal";
 
 const providers = [
   { value: "stripe", label: "Stripe" },
@@ -36,7 +36,7 @@ export function SyncHistory() {
       header: "Result",
       render: (e) => (
         <Badge tone={resultTone(e.result)}>
-          {e.result}
+          {e.result === "rejected" ? "Rejected (invalid signature)" : e.result}
           {e.httpStatus ? ` · ${e.httpStatus}` : ""}
         </Badge>
       ),

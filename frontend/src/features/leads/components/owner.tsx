@@ -12,7 +12,7 @@ export function Owner({ id, me, size = "sm" }: { id: string | null | undefined; 
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <Avatar name={name} id={id} size={size} status={m?.status} />
-      <span className="truncate">{id === me ? "You" : name}</span>
+      <span className="truncate">{id === me ? `${name} (you)` : name}</span>
     </span>
   );
 }

@@ -2,64 +2,61 @@
 
 :root,
 .light {
-  --paper: #f4f1ea;
-  --surface: #fffdf8;
-  --ink: #17140f;
-  --ink-muted: #5a544a;
-  --line: #dcd5c7;
-  --signal: #c8391b;
-  --on-signal: #fffdf8;
-  --ok: #2e6a3e;
-  --warn: #9a5a00;
-  --focus: #1f4fd1;
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --wash: #f6f7f9;
+  --ink: #16171a;
+  --ink-muted: #6b7078;
+  --line: #e6e8ec;
+  --accent: #2563eb;
+  --on-accent: #ffffff;
+  --signal: #d92d20;
+  --on-signal: #ffffff;
+  --ok: #107a45;
+  --warn: #b25e09;
+  --focus: #2563eb;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px -8px rgba(16, 24, 40, 0.14);
   color-scheme: light;
 }
 
 .dark {
-  --paper: #11100e;
-  --surface: #1a1916;
-  --ink: #ece7dc;
-  --ink-muted: #a39c8f;
-  --line: #2e2b26;
-  --signal: #ff6b47;
-  --on-signal: #11100e;
-  --ok: #6bbf7f;
-  --warn: #e0a44a;
+  --paper: #101114;
+  --surface: #17181c;
+  --wash: #1b1c21;
+  --ink: #ececef;
+  --ink-muted: #9a9ea8;
+  --line: #2a2c33;
+  --accent: #5b8cff;
+  --on-accent: #0b0c10;
+  --signal: #ff6b5e;
+  --on-signal: #101114;
+  --ok: #4cc38a;
+  --warn: #e5a443;
   --focus: #7ea2ff;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px -8px rgba(0, 0, 0, 0.6);
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --paper: #11100e;
-    --surface: #1a1916;
-    --ink: #ece7dc;
-    --ink-muted: #a39c8f;
-    --line: #2e2b26;
-    --signal: #ff6b47;
-    --on-signal: #11100e;
-    --ok: #6bbf7f;
-    --warn: #e0a44a;
-    --focus: #7ea2ff;
-    color-scheme: dark;
-  }
 }
 
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
+  --color-wash: var(--wash);
   --color-ink: var(--ink);
   --color-muted: var(--ink-muted);
   --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
   --color-signal: var(--signal);
   --color-on-signal: var(--on-signal);
   --color-ok: var(--ok);
   --color-warn: var(--warn);
   --color-focus: var(--focus);
-  --font-sans: var(--font-plex-sans), "IBM Plex Sans", sans-serif;
+  --font-sans: var(--font-inter), "Inter", system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-float: var(--shadow);
 }
 
 * {
@@ -77,6 +74,14 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 1.45;
+  letter-spacing: -0.006em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2 {
+  letter-spacing: -0.025em;
 }
 
 :focus-visible {

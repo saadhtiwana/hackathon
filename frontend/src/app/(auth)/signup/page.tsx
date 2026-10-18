@@ -50,7 +50,7 @@ export default function SignupPage() {
   return (
     <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <div>
-        <h1 className="text-[20px] font-medium">Create a workspace</h1>
+        <h1 className="text-[22px] font-semibold tracking-tight">Create a workspace</h1>
         <p className="mt-1 text-[13px] text-muted">The first account becomes the owner.</p>
       </div>
       <Field label="Company" htmlFor="workspaceName" error={form.formState.errors.workspaceName?.message}>

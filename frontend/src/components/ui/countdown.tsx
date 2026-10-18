@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
 import { formatClock } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -30,16 +31,19 @@ export function Countdown({
       : "";
 
   return (
-    <div className="w-28">
-      <p className={cn("font-mono text-[13px] tabular-nums", urgent || overdue ? "text-signal" : "text-ink")}>
-        {label}
-      </p>
-      <div className="mt-1 h-1 overflow-hidden rounded-sm bg-line" aria-hidden>
-        <div className={cn("h-full", urgent || overdue ? "bg-signal" : "bg-ink")} style={{ width: `${ratio * 100}%` }} />
-      </div>
+    <span
+      className={cn(
+        "inline-flex h-6 items-center gap-1.5 rounded-md px-2 text-[12px] font-medium whitespace-nowrap tabular-nums",
+        overdue || urgent
+          ? "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-signal"
+          : "bg-[color-mix(in_srgb,var(--ok)_12%,transparent)] text-ok",
+      )}
+    >
+      <Clock className="size-3" aria-hidden />
+      {label}
       <span className="sr-only" aria-live="polite">
         {live}
       </span>
-    </div>
+    </span>
   );
 }

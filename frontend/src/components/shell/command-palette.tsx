@@ -37,7 +37,7 @@ export function CommandPalette({
       open={open}
       onOpenChange={onOpenChange}
       label="Jump to a page"
-      className="fixed top-[18%] left-1/2 z-50 w-[min(480px,calc(100vw-32px))] -translate-x-1/2 rounded-md border border-line bg-surface"
+      className="fixed top-[18%] left-1/2 z-50 w-[min(480px,calc(100vw-32px))] -translate-x-1/2 rounded-lg border border-line bg-surface shadow-float"
     >
       <Command.Input
         value={query}
@@ -56,7 +56,7 @@ export function CommandPalette({
               onOpenChange(false);
               setQuery("");
             }}
-            className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-paper"
+            className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-wash"
           >
             {item.label}
           </Command.Item>

@@ -31,7 +31,7 @@ export function Combobox({
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           sideOffset={4}
-          className="z-50 w-56 rounded-md border border-line bg-surface p-1"
+          className="z-50 w-56 rounded-lg border border-line bg-surface p-1 shadow-float"
         >
           <Command label={label}>
             <Command.Input
@@ -48,7 +48,7 @@ export function Combobox({
                     onChange(option.value);
                     setOpen(false);
                   }}
-                  className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-paper"
+                  className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-wash"
                 >
                   {option.label}
                 </Command.Item>

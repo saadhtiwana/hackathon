@@ -12,11 +12,11 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded-sm border px-1.5 font-mono text-[12px] tabular-nums",
-        tone === "neutral" && "border-line text-muted",
-        tone === "ok" && "border-ok/40 text-ok",
-        tone === "warn" && "border-warn/40 text-warn",
-        tone === "signal" && "border-signal/40 text-signal",
+        "inline-flex h-5 items-center rounded-md px-1.5 text-[12px] font-medium tabular-nums",
+        tone === "neutral" && "bg-wash text-muted",
+        tone === "ok" && "bg-[color-mix(in_srgb,var(--ok)_12%,transparent)] text-ok",
+        tone === "warn" && "bg-[color-mix(in_srgb,var(--warn)_14%,transparent)] text-warn",
+        tone === "signal" && "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-signal",
         className,
       )}
     >

@@ -34,14 +34,14 @@ export function Select({
         <SelectPrimitive.Content
           position="popper"
           sideOffset={4}
-          className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-md border border-line bg-surface p-1"
+          className="z-50 min-w-[var(--radix-select-trigger-width)] rounded-lg border border-line bg-surface p-1 shadow-float"
         >
           <SelectPrimitive.Viewport>
             {options.map((option) => (
               <SelectPrimitive.Item
                 key={option.value}
                 value={option.value}
-                className="flex h-9 cursor-pointer items-center justify-between gap-3 rounded-sm px-2 text-[13px] outline-none data-[highlighted]:bg-paper"
+                className="flex h-9 cursor-pointer items-center justify-between gap-3 rounded-sm px-2 text-[13px] outline-none data-[highlighted]:bg-wash"
               >
                 <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
                 <SelectPrimitive.ItemIndicator>

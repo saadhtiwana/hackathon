@@ -26,7 +26,7 @@ export function Dialog({
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-ink/40" />
         <DialogPrimitive.Content
           className={cn(
-            "fixed top-1/2 left-1/2 z-50 w-[min(440px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-md border border-line bg-surface p-4",
+            "fixed top-1/2 left-1/2 z-50 w-[min(440px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 rounded-lg border border-line bg-surface p-5 shadow-float",
           )}
         >
           <div className="mb-3 flex items-start justify-between gap-3">
@@ -40,7 +40,7 @@ export function Dialog({
             </div>
             <DialogPrimitive.Close
               aria-label="Close"
-              className="inline-flex size-9 items-center justify-center rounded-md hover:bg-paper"
+              className="inline-flex size-9 items-center justify-center rounded-md hover:bg-wash"
             >
               <X className="size-4" aria-hidden />
             </DialogPrimitive.Close>

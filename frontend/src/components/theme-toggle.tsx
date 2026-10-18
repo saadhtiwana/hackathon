@@ -6,20 +6,13 @@ import { IconButton } from "@/components/ui/icon-button";
 
 function currentDark() {
   const root = document.documentElement;
-  if (root.classList.contains("dark")) return true;
-  if (root.classList.contains("light")) return false;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return root.classList.contains("dark");
 }
 
 function subscribe(onStoreChange: () => void) {
   const observer = new MutationObserver(onStoreChange);
   observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-  const media = window.matchMedia("(prefers-color-scheme: dark)");
-  media.addEventListener("change", onStoreChange);
-  return () => {
-    observer.disconnect();
-    media.removeEventListener("change", onStoreChange);
-  };
+  return () => observer.disconnect();
 }
 
 export function ThemeToggle() {

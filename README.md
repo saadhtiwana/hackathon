@@ -34,12 +34,12 @@
 
 Password for all four: `g1Z752U5UWSN`
 
-| Email | Role | Workspace |
-|---|---|---|
-| `saadhayat799@gmail.com` | Owner | Margalla Estates |
-| `abdullahisdev@gmail.com` | Admin | Margalla Estates |
-| `ahmadmustafabutt.dev@gmail.com` | User (deal values hidden) | Margalla Estates |
-| `sana@kohsarsolar.pk` | Owner | Kohsar Solar (a separate, isolated workspace) |
+| Email | Password | Role | Workspace |
+|---|---|---|---|
+| `saadhayat799@gmail.com` | `g1Z752U5UWSN` | Owner | Margalla Estates |
+| `abdullahisdev@gmail.com` | `g1Z752U5UWSN` | Admin | Margalla Estates |
+| `ahmadmustafabutt.dev@gmail.com` | `g1Z752U5UWSN` | User (deal values hidden) | Margalla Estates |
+| `sana@kohsarsolar.pk` | `g1Z752U5UWSN` | Owner | Kohsar Solar (a separate, isolated workspace) |
 
 Email the customer address and watch a lead appear with an owner and a countdown. Leave it unacknowledged and it moves to the next person, then a backup, then a manager, and stops there.
 

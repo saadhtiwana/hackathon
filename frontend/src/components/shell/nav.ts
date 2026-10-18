@@ -25,7 +25,7 @@ export type NavItem = {
 };
 
 export const primaryNav: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Inbox, permission: "crm.view", count: true },
   { href: "/inbox", label: "Inbox", icon: MessageSquare, permission: "crm.view" },
   { href: "/pipeline", label: "Pipeline", icon: Columns3, permission: "crm.view" },

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 import { AlarmClock, Check, CircleCheck, Clock, UserX } from "lucide-react";
 import { useMe } from "@/components/session";
 import { presence } from "@/components/ui/avatar";
@@ -43,13 +45,23 @@ export function LeadsInbox() {
   const canAll = can(me.data, "leads.reassign");
   const [scopeChoice, setScope] = useState<"mine" | "all" | null>(null);
   const scope = scopeChoice ?? (canAll ? "all" : "mine");
-  const [status, setStatus] = useState<StatusFilter>("open");
+  const params = useSearchParams();
+  const created = params.get("created") as "today" | "week" | "month" | null;
+  const escalated = params.get("escalated") === "24h";
+  const statusParam = params.get("status") as StatusFilter | null;
+  const [status, setStatus] = useState<StatusFilter>(statusParam && statusOptions.some((o) => o.value === statusParam) ? statusParam : created || escalated ? "all" : "open");
 
   const serverStatus = status === "open" || status === "all" ? undefined : status;
   const leads = useLeads({ status: serverStatus, mine: scope === "mine" }, me.isSuccess);
-  const rows = (leads.data?.items ?? []).filter((l) => status !== "open" || l.status !== "closed");
-
   const now = useServerNow();
+  const since = created && now ? startOf(created, now) : null;
+  const rows = (leads.data?.items ?? [])
+    .filter((l) => status !== "open" || l.status !== "closed")
+    .filter((l) => !since || new Date(l.createdAt).getTime() >= since)
+    // automatic escalations move the lead to a higher level and reset assignedAt
+    .filter((l) => !escalated || (l.escalationLevel > 0 && !!l.assignedAt && now - new Date(l.assignedAt).getTime() <= 86_400_000));
+  const drill = created ? `Created ${created === "today" ? "today" : `this ${created}`}` : escalated ? "Escalated in the last 24 hours" : null;
+
   const nameOf = useMemberNames();
   const ack = useAcknowledge();
   const toast = useToast();
@@ -154,6 +166,15 @@ export function LeadsInbox() {
         }
       />
 
+      {drill ? (
+        <p className="mb-4">
+          <Link href="/leads" className="inline-flex h-8 items-center gap-2 rounded-full bg-accent-soft px-3 text-[13px] font-medium text-accent-text hover:opacity-90">
+            {drill}
+            <X className="size-3.5" aria-label="Clear filter" />
+          </Link>
+        </p>
+      ) : null}
+
       <InboxOverview leads={leads.data?.items} now={now} />
 
       {leads.isLoading || me.isLoading ? (
@@ -216,4 +237,12 @@ function InboxOverview({ leads, now }: { leads: Lead[] | undefined; now: number 
       ) : null}
     </div>
   );
+}
+
+function startOf(range: "today" | "week" | "month", now: number) {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  if (range === "week") d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  if (range === "month") d.setDate(1);
+  return d.getTime();
 }

@@ -1,5 +1,10 @@
+import { Suspense } from "react";
 import { LeadsInbox } from "@/features/leads/inbox";
 
 export default function LeadsPage() {
-  return <LeadsInbox />;
+  return (
+    <Suspense fallback={<p className="text-[13px] text-text-muted">Loading leads</p>}>
+      <LeadsInbox />
+    </Suspense>
+  );
 }

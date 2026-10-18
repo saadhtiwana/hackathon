@@ -29,7 +29,7 @@ export default function LoginPage() {
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
   useEffect(() => {
-    if (me.isSuccess) router.replace("/");
+    if (me.isSuccess) router.replace("/dashboard");
   }, [me.isSuccess, router]);
 
   async function onSubmit(values: FormValues) {
@@ -37,7 +37,7 @@ export default function LoginPage() {
     try {
       await api.login(values);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      router.replace("/");
+      router.replace("/dashboard");
     } catch (error) {
       if (isApiError(error) && error.fields) {
         for (const [key, message] of Object.entries(error.fields)) {

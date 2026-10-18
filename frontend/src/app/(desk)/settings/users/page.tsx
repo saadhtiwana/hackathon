@@ -1,17 +1,6 @@
-import { Placeholder } from "@/features/placeholder";
+import { redirect } from "next/navigation";
 
-const crumbs = [
-  { href: "/", label: "Desk" },
-  { label: "Users & roles" },
-];
-
+// The team page replaced the users placeholder; keep the old link working.
 export default function UsersSettingsPage() {
-  return (
-    <Placeholder
-      title="Users & roles"
-      description="Who can see records, values, and the audit log."
-      crumbs={crumbs}
-      body="Invites, base levels, and permission sets will be edited here."
-    />
-  );
+  redirect("/settings/team");
 }

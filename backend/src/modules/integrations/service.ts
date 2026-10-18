@@ -122,6 +122,7 @@ export async function connect(a: AuthContext, id: string, input: unknown) {
     });
   });
   await events.recordOutbound({ workspaceId: ws, provider: ad.dbProvider, type: 'connect', result: 'ok' });
+  await ad.afterConnect?.(ctx, result.config).catch((e) => logger.error('afterConnect failed', { provider: ad.id, err: e instanceof Error ? e.message : String(e) }));
   return { provider: ad.id, status: 'connected', secretMasked: mask(result.secretLast4) };
 }
 

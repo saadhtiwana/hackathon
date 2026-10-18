@@ -43,3 +43,7 @@ paymentsRouter.get('/payments/:id', requirePermission('crm.view'), asyncHandler(
 paymentsRouter.post('/payments/:id/expire', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
   res.json(await svc.expirePayment(req.auth!, uuid.parse(req.params.id)));
 }));
+
+paymentsRouter.post('/payments/:id/send', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
+  res.status(201).json(await svc.sendPaymentLink(req.auth!, uuid.parse(req.params.id)));
+}));

@@ -14,6 +14,7 @@
     "generate": "drizzle-kit generate",
     "seed": "tsx src/core/db/seed.ts",
     "connect:stripe": "tsx src/scripts/connect-stripe.ts",
+    "connect:discord": "tsx src/scripts/connect-discord.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

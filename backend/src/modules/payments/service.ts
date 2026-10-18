@@ -15,6 +15,7 @@ import { ProviderError, withRetry } from '../integrations/errors.js';
 import { markError, markOk, loadConfig } from '../integrations/service.js';
 import { stripeAdapter } from '../integrations/stripe/adapter.js';
 import { stripeFor, toProviderError } from '../integrations/stripe/client.js';
+import { sendToContact } from '../conversations/service.js';
 
 type Payment = typeof payments.$inferSelect;
 type Status = Payment['status'];
@@ -194,3 +195,13 @@ export async function getPayment(ws: string, id: string) {
   return { payment: rest, opportunity: opp ?? null, contact: contact ?? null, requestedBy: requester ?? null, providerRef: { provider: 'stripe', sessionId: providerSessionId, paymentIntentId } };
 }
 
+
+// Sends the Checkout link to the customer over Discord (I2.1).
+export async function sendPaymentLink(a: AuthContext, id: string) {
+  const p = await getOr404(db, payments, a.workspaceId, id, 'Payment');
+  if (p.status !== 'requested' || !p.url) throw conflict('Only an open payment request with a link can be sent', undefined, 'not_sendable');
+  const amount = `${(p.amountCents / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })} ${p.currency}`;
+  const message = await sendToContact(a, p.contactId, `Payment request for ${amount}${p.description ? ` (${p.description})` : ''}. Pay securely here: ${p.url}`);
+  await activity.record(db, { workspaceId: a.workspaceId, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId: a.userId, data: { paymentId: p.id, event: 'link_sent', channel: 'discord', messageId: message.id } });
+  return { message };
+}

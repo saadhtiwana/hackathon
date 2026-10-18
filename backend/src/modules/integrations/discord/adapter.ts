@@ -1,21 +1,30 @@
 import { z } from 'zod';
 import { last4 } from '../../../core/crypto/index.js';
-import { ProviderError, classify, withRetry } from '../errors.js';
+import { ProviderError } from '../errors.js';
 import type { ProviderAdapter } from '../adapter.js';
+import { discordApi, type DiscordConfig } from './api.js';
+import { clearCommands, registerCommands } from './commands.js';
+import { gateways } from './gateway.js';
 
-const input = z.object({ botToken: z.string().trim().min(20).max(200), guildId: z.string().trim().max(30).optional(), channelId: z.string().trim().max(30).optional() }).strict();
+const snowflake = z.string().trim().regex(/^\d{15,25}$/, 'Must be a Discord id');
+const input = z
+  .object({
+    appId: snowflake,
+    publicKey: z.string().trim().regex(/^[0-9a-fA-F]{64}$/, 'Public key must be 64 hex characters'),
+    botToken: z.string().trim().min(20).max(200),
+    customerGuildId: snowflake,
+    staffGuildId: snowflake,
+  })
+  .strict();
 
-async function whoAmI(token: string) {
-  return withRetry(async () => {
-    let r: Response;
-    try {
-      r = await fetch('https://discord.com/api/v10/users/@me', { headers: { Authorization: `Bot ${token}` }, signal: AbortSignal.timeout(10_000) });
-    } catch (e) {
-      throw classify(undefined, e instanceof Error ? e.message : 'network error');
-    }
-    if (!r.ok) throw classify(r.status, `Discord rejected the request (${r.status})`);
-    return (await r.json()) as { id: string; username: string };
-  });
+async function check(cfg: DiscordConfig) {
+  const me = await discordApi<{ id: string; username: string }>(cfg.botToken, 'GET', '/users/@me');
+  const guilds = await discordApi<Array<{ id: string }>>(cfg.botToken, 'GET', '/users/@me/guilds');
+  const ids = new Set(guilds.map((g) => g.id));
+  for (const [label, id] of [['customer', cfg.customerGuildId], ['staff', cfg.staffGuildId]] as const) {
+    if (!ids.has(id)) throw new ProviderError(`The bot is not a member of the ${label} server. Invite it with the OAuth2 link for application ${cfg.appId} and try again`, false, 'bot_not_in_guild');
+  }
+  return me;
 }
 
 export const discordAdapter: ProviderAdapter = {
@@ -23,23 +32,32 @@ export const discordAdapter: ProviderAdapter = {
   dbProvider: 'discord',
   label: 'Discord',
   async connect(_ctx, raw) {
-    const i = input.parse(raw);
-    const me = await whoAmI(i.botToken);
-    return { config: { ...i, botId: me.id, botName: me.username }, secretLast4: last4(i.botToken) };
+    const cfg = input.parse(raw) as DiscordConfig;
+    const me = await check(cfg);
+    const commands = await registerCommands(cfg);
+    return { config: { ...cfg, botId: me.id, botName: me.username, commands }, secretLast4: last4(cfg.botToken) };
+  },
+  async afterConnect(ctx, config) {
+    await gateways.start(ctx.workspaceId, config as unknown as DiscordConfig);
   },
   async test(ctx) {
-    const token = ctx.config?.botToken as string | undefined;
-    if (!token) throw new ProviderError('Discord is not connected', false, 'not_connected');
-    await whoAmI(token);
+    const cfg = ctx.config as DiscordConfig | null;
+    if (!cfg?.botToken) throw new ProviderError('Discord is not connected', false, 'not_connected');
+    await check(cfg);
+    if (!gateways.isOnline(ctx.workspaceId)) await gateways.start(ctx.workspaceId, cfg);
   },
-  async disconnect() {},
+  async disconnect(ctx) {
+    const cfg = ctx.config as DiscordConfig | null;
+    await gateways.stop(ctx.workspaceId);
+    if (cfg?.botToken) await clearCommands(cfg).catch(() => {});
+  },
   describeLimits: () => ({
     summary: 'Discord is the messaging and alert channel for this workspace.',
-    can: ['Receive customer messages from the server and turn them into contacts and leads', 'Reply from the platform as the bot', 'Alert employees when a lead escalates'],
+    can: ['Receive customer enquiries and direct messages and turn them into contacts and leads', 'Reply from the platform as the bot', 'Alert employees by direct message when a lead escalates'],
     cannot: [
-      'Twilio WhatsApp and Telegram are not usable from Pakistan, which is why Discord is used',
       'Discord has no delivered or read receipts, so messages show sent or failed only',
-      'Customers must join your Discord server before they can be messaged',
+      'Customers must join the Margalla Estates Discord server before they can message or be messaged by the bot',
+      'Twilio WhatsApp and Telegram are not available from Pakistan, which is why Discord is used',
     ],
   }),
 };

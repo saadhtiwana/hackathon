@@ -16,6 +16,9 @@ import { internalRouter } from './core/scheduler/index.js';
 import { integrationsRouter } from './modules/integrations/routes.js';
 import { paymentsRouter } from './modules/payments/routes.js';
 import { stripeWebhookRouter } from './modules/payments/webhook.js';
+import { discordInteractionsRouter } from './modules/integrations/discord/interactions.js';
+import { discordRouter } from './modules/integrations/discord/alerts.js';
+import { conversationsRouter } from './modules/conversations/routes.js';
 
 export function createApp() {
   const app = express();
@@ -26,6 +29,7 @@ export function createApp() {
 
   // Signed webhooks need the untouched body, so they mount before the JSON parsers.
   app.use('/webhooks/stripe', stripeWebhookRouter);
+  app.use('/webhooks/discord', discordInteractionsRouter);
 
   const keepRaw = (req: express.Request, _res: express.Response, buf: Buffer) => {
     req.rawBody = buf;
@@ -51,7 +55,9 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(discordRouter);
   api.use(integrationsRouter);
+  api.use(conversationsRouter);
   api.use(paymentsRouter);
   api.use(leadsRouter);
   app.use('/api', api);

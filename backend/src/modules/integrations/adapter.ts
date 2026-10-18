@@ -26,6 +26,8 @@ export interface ProviderAdapter {
   // Per-user OAuth providers connect each employee separately instead of storing a workspace secret.
   perUser?: boolean;
   connect(ctx: AdapterContext, input: unknown): Promise<ConnectResult>;
+  // Runs once the connection is saved (for example to start a long-lived listener).
+  afterConnect?(ctx: AdapterContext, config: Record<string, unknown>): Promise<void>;
   test(ctx: AdapterContext): Promise<void>;
   disconnect(ctx: AdapterContext): Promise<void>;
   describeLimits(): Limits;

@@ -4,7 +4,7 @@ type Availability = 'available' | 'busy' | 'on_leave' | 'offline';
 
 // Interface owned by the leads module. Until its implementation registers itself, calls are no-ops.
 export interface LeadHooks {
-  createLead(tx: Tx, i: { workspaceId: string; contactId: string; source: 'webform' | 'whatsapp' | 'manual'; opportunityId?: string }): Promise<unknown>;
+  createLead(tx: Tx, i: { workspaceId: string; contactId: string; source: 'webform' | 'whatsapp' | 'manual' | 'discord'; opportunityId?: string; actorId?: string | null; message?: string; dedupeOpen?: boolean }): Promise<any>;
   acknowledge(tx: Tx, i: { leadId: string; actorId: string }): Promise<unknown>;
   onActivity(tx: Tx, i: { leadId: string; actorId: string | null; type: string }): Promise<void>;
   onAvailabilityChange(tx: Tx, i: { workspaceId: string; userId: string; status: Availability; actorId?: string | null }): Promise<{ reassigned: number; flaggedAway: number } | void>;

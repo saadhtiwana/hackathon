@@ -53,6 +53,7 @@ export const memberships = pgTable(
     availabilityChangedAt: tstz('availability_changed_at'),
     telegramChatId: text('telegram_chat_id'),
     discordUserId: text('discord_user_id'),
+    alertEmail: text('alert_email'),
     notifyOnEscalation: boolean('notify_on_escalation').notNull().default(true),
     notifyOnMessage: boolean('notify_on_message').notNull().default(false),
     active: boolean('active').notNull().default(true),

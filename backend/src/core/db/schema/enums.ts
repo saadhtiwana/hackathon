@@ -7,14 +7,14 @@ export const customFieldType = pgEnum('custom_field_type', ['text', 'number', 'd
 export const activityType = pgEnum('activity_type', [
   'note', 'call_log', 'stage_change', 'assignment', 'field_edit', 'message', 'payment', 'appointment', 'lead_ack', 'lead_escalation',
 ]);
-export const leadSource = pgEnum('lead_source', ['webform', 'whatsapp', 'manual', 'discord']);
+export const leadSource = pgEnum('lead_source', ['webform', 'whatsapp', 'manual', 'discord', 'email']);
 export const leadStatus = pgEnum('lead_status', ['unassigned', 'assigned', 'acknowledged', 'closed']);
 export const assignmentReason = pgEnum('assignment_reason', ['initial', 'ack_expired', 'manual', 'owner_unavailable']);
 export const messageDirection = pgEnum('message_direction', ['in', 'out']);
 export const messageStatus = pgEnum('message_status', ['queued', 'sent', 'delivered', 'read', 'failed', 'received']);
 export const paymentStatus = pgEnum('payment_status', ['requested', 'paid', 'expired', 'failed', 'refunded', 'partially_refunded']);
 export const appointmentStatus = pgEnum('appointment_status', ['scheduled', 'cancelled', 'completed']);
-export const provider = pgEnum('provider', ['twilio', 'stripe', 'google', 'telegram', 'discord']);
+export const provider = pgEnum('provider', ['twilio', 'stripe', 'google', 'telegram', 'discord', 'gmail']);
 export const connectionStatus = pgEnum('connection_status', ['not_connected', 'connected', 'error']);
 export const eventDirection = pgEnum('event_direction', ['in', 'out']);
 export const outboxStatus = pgEnum('outbox_status', ['pending', 'running', 'done', 'failed']);

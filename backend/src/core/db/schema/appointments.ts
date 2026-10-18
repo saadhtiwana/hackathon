@@ -14,6 +14,7 @@ export const appointments = pgTable(
     opportunityId: uuid('opportunity_id').references(() => opportunities.id, { onDelete: 'set null' }),
     googleEventId: text('google_event_id'),
     title: text('title').notNull(),
+    notes: text('notes'),
     startsAt: tstz('starts_at').notNull(),
     endsAt: tstz('ends_at').notNull(),
     timezone: text('timezone').notNull(), // IANA name; instants are stored as timestamptz (UTC)

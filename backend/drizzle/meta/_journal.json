@@ -43,6 +43,13 @@
       "when": 1792306062424,
       "tag": "0005_discord_messaging",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792309002267,
+      "tag": "0006_email_channel_calendar_notes",
+      "breakpoints": true
     }
   ]
 }

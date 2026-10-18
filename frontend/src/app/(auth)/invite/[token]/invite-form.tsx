@@ -29,7 +29,9 @@ export function InviteForm() {
   async function onSubmit(values: FormValues) {
     setSubmitError(null);
     try {
-      await api.acceptInvite({ token: params.token, ...values });
+      // read the token from the address bar: useParams can hand back a prerender placeholder on static pages
+      const token = decodeURIComponent(window.location.pathname.split("/").filter(Boolean).pop() ?? params.token);
+      await api.acceptInvite({ token, ...values });
       await queryClient.invalidateQueries({ queryKey: ["me"] });
       router.replace("/dashboard");
     } catch (error) {

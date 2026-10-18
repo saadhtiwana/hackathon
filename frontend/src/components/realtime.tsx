@@ -19,6 +19,7 @@ const keys: Record<string, string[][]> = {
   "appointment.updated": [["appointments"], ["contacts"], ["opportunities"]],
   "activity.created": [["contacts"], ["opportunities"], ["companies"], ["pipelines"]],
   "availability.changed": [["me"], ["availability"]],
+  "notification.created": [["notifications"]],
 };
 
 export function Realtime() {

@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/cn";
 import { useMe } from "@/components/session";
+import { NotificationBell } from "@/features/notifications/bell";
 import { RelayMark } from "@/components/brand/relay-mark";
 import { paletteItems, primaryNav, settingsNav, type NavItem } from "@/components/shell/nav";
 import { CommandPalette } from "@/components/shell/command-palette";
@@ -278,9 +279,7 @@ export function DeskShell({ children }: { children: React.ReactNode }) {
               </DropdownItem>
             ))}
           </DropdownMenu>
-          <IconButton label="Notifications" onClick={() => router.push("/settings/notifications")}>
-            <Bell className="size-[18px]" />
-          </IconButton>
+          <NotificationBell />
           <ThemeToggle />
           <DropdownMenu
             label="Account menu"

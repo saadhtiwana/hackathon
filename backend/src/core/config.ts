@@ -1,7 +1,7 @@
-import 'dotenv/config';
+import { env } from './env.js';
 
 export const config = {
-  port: Number(process.env.PORT ?? 3000),
-  databaseUrl: process.env.DATABASE_URL ?? '',
-  databaseUrlDirect: process.env.DATABASE_URL_DIRECT ?? process.env.DATABASE_URL ?? '',
+  port: env.PORT,
+  databaseUrl: env.DATABASE_URL,
+  databaseUrlDirect: env.DATABASE_URL_DIRECT,
 };

@@ -6,6 +6,8 @@ export const workspaces = pgTable('workspaces', {
   id: id(),
   name: text('name').notNull(),
   slug: text('slug').notNull().unique(),
+  timezone: text('timezone').notNull().default('UTC'),
+  defaultCurrency: text('default_currency').notNull().default('USD'),
   createdAt: createdAt(),
 });
 

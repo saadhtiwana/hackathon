@@ -114,7 +114,7 @@ describe('sweep', () => {
       ['a', 'initial', 'escalated'],
       ['b', 'ack_expired', 'escalated'],
       ['bk', 'ack_expired', 'escalated'],
-      ['mg', 'ack_expired', 'escalated'],
+      ['mg', 'ack_expired', null], // still with the manager, assignment stays open
     ]);
     const q = await w.svc.recoveryQueue(W, { userId: 'mg', canSeeAll: true });
     expect(q.items[0].reasons.map((r) => r.code)).toEqual(['escalated_multiple']);

@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const backend = process.env.BACKEND_URL ?? "http://localhost:4000";
+const backend = process.env.BACKEND_URL || "https://relay-api-s6yw.onrender.com";
 
 const nextConfig: NextConfig = {
   agentRules: false,

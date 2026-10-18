@@ -62,7 +62,7 @@ export function Table<T>({
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-surface">
       <div className="overflow-x-auto">
-      <table className="w-full min-w-[520px] sm:min-w-[640px] border-collapse text-left">
+      <table className="w-full min-w-[460px] sm:min-w-[640px] border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-surface">
           <tr className="h-10 border-b border-border text-[12px] text-text-muted">
@@ -97,7 +97,7 @@ export function Table<T>({
               className={cn("h-12 border-b border-border animate-row-in last:border-b-0 hover:bg-surface-hover", index === active && "bg-surface-muted")}
             >
               {columns.map((column) => (
-                <td key={column.key} className={cn("px-4 text-[13px] first:pl-5 last:pr-5", column.align === "right" && "text-right")}>
+                <td key={column.key} className={cn("px-3 text-[13px] first:pl-4 last:pr-4 sm:px-4 sm:first:pl-5 sm:last:pr-5", column.align === "right" && "text-right")}>
                   {column.render(row)}
                 </td>
               ))}

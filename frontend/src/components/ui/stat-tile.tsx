@@ -30,8 +30,8 @@ export function StatTile({
   const body = (
     <>
       <span className="flex items-start justify-between gap-3">
-        <span className="min-w-0 text-[24px] leading-none font-semibold tracking-tight tabular-nums sm:text-[32px]">{value}</span>
-        <span className="inline-flex size-9 items-center justify-center rounded-lg bg-surface/70" aria-hidden>
+        <span className="min-w-0 text-[22px] leading-none font-semibold tracking-tight tabular-nums sm:text-[32px]">{value}</span>
+        <span className="hidden size-9 items-center justify-center rounded-lg bg-surface/70 sm:inline-flex" aria-hidden>
           <Icon className="size-[18px]" />
         </span>
       </span>

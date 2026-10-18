@@ -26,7 +26,7 @@ Source of truth: `backend/src/core/db/schema/` (Drizzle, one file per module). M
 
 ## Key constraints
 
-- `users.email` unique (global); a user joins workspaces through `memberships` (unique `workspace_id, user_id`) which carry `role_id`, `availability`, `telegram_chat_id`, notify prefs.
+- `users.email` unique (global); a user joins workspaces through `memberships` (unique `workspace_id, user_id`) which carry `role_id`, `availability`, notify prefs and an optional alert email.
 - `roles.base_level` is owner | admin | user; permissions live in `role_permissions` as text keys (see `docs/api.md`), not tied to role names.
 - `sessions.token_hash` unique (raw token only in the cookie).
 - `contacts`: unique `(workspace_id, phone)` where phone is not null (E.164); `opted_out` + `opt_out_reason`; `custom` jsonb.

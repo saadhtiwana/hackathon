@@ -15,7 +15,7 @@ Scope: F3.1-F3.9 and the section 7 metric definitions.
 
 | From | To | Trigger |
 |---|---|---|
-| (new) | unassigned | intake with a source label: `webform`, `whatsapp` or `manual` |
+| (new) | unassigned | intake with a source label: `webform`, `email` or `manual` |
 | unassigned | assigned | assignment picks an Available member |
 | assigned | acknowledged | owner clicks Acknowledge or records an action |
 | assigned | assigned (new owner) | escalation (window expired) |

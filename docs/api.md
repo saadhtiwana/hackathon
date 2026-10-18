@@ -21,7 +21,7 @@
 | POST | /auth/accept-invite | public | `{token,name,password}` | `{user,workspace}` |
 | GET | /workspace | - | - | `{workspace:{id,name,slug,timezone,defaultCurrency}}` |
 | PATCH | /workspace | settings.manage | `{name?,timezone?,defaultCurrency?}` | `{workspace}` (audited) |
-| GET | /me | - | - | `{user:{id,name,email},workspace:{id,name},role:{id,name,baseLevel},permissions[],availability,telegramLinked,googleConnected}` |
+| GET | /me | - | - | `{user:{id,name,email},workspace:{id,name},role:{id,name,baseLevel},permissions[],availability}` |
 
 ## Users, invites, roles
 
@@ -115,22 +115,21 @@
 | POST | /public/leads/:workspaceSlug | public, rate limited | `{name,phone?,email?,message?,website?}` (`website` honeypot) | `201 {ok:true}` |
 | GET | /public/forms/:workspaceSlug | public | - | `{workspaceName,fields[]}` |
 
-## Conversations and messages (email, Discord)
+## Conversations and messages (email)
 
-Primary channel is email through the agency Gmail account (Twilio blocks Pakistani signups and Telegram is blocked); Discord stays available behind the same framework. The inbox is polled every 30 seconds. An email from an unknown sender creates a contact and a lead (source `email`); `STOP` as the subject or the whole body opts the contact out. Replies go out in the same thread. Each channel is its own conversation per contact and sending uses the conversation's channel.
+Messaging is email through the agency Gmail account: customers write to the agency address (a plus-address on the connected mailbox) and replies leave from the mailbox with Reply-To set to that address. Twilio blocks Pakistani signups (error 0x07) and Telegram is blocked in Pakistan, so neither is used. Only mail delivered to the agency address is read, every 30 seconds; no-reply and notification senders and messages with List-Unsubscribe, Auto-Submitted or Precedence bulk/list are skipped. An email from an unknown sender creates a contact and a lead with source `email`; `STOP` as the subject or the whole body opts the contact out.
 
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
 | GET | /conversations | crm.view | `?scope=mine\|unassigned\|all&limit` (`unassigned`/`all` need leads.reassign) | `{items:[{id,contactId,contactName,optedOut,channel,ownerId,ownerName,lastMessageAt,lastMessage:{body,direction,status}}]}` owner follows the open lead |
 | GET | /conversations/:id | crm.view | `?limit&before` | `{conversation:{id,channel,contactId,contactName,optedOut,optOutReason,owner},messages:[{id,direction,body,status,errorCode,errorMessage,retryOf,createdAt}]}` oldest first; 404 if not yours and no leads.reassign |
-| POST | /conversations/:id/messages | crm.edit | `{body}` | `201 {message}` status `queued`, then `sent` or `failed`; `409 opted_out` with the reason; `409 no_discord_id` |
-| POST | /contacts/:id/messages | crm.edit | `{body}` | same, starts the conversation if none |
+| POST | /conversations/:id/messages | crm.edit | `{body}` | `201 {message}` status `queued`, then `sent` or `failed`; `409 opted_out` with the reason; `409 no_email` |
+| POST | /contacts/:id/messages | crm.edit | `{body}` | same, starts the email conversation if none |
 | POST | /messages/:id/retry | crm.edit | - | `201 {message}` new message with `retryOf` set |
 | POST | /payments/:id/send | crm.edit | - | `201 {message}` emails the Checkout link to the contact and records an activity |
+| GET | /public/agency-contact/:slug | public | - | `{email}` the agency address, shown under the public web form |
 
-Message states: `received` (inbound), `queued`, `sent` (Discord message id stored), `failed` (Discord code and plain explanation). Discord has no delivered or read receipts.
-
-Discord interactions: `POST /webhooks/discord/:workspaceId` (Ed25519 signature with the workspace public key; forged requests get `401` and are recorded; duplicate interaction ids are ignored). Customer server: `/enquire` (modal: name, phone, need) and `/stop` (opt out). Staff server: `/link code:<code>`. Inbound DMs arrive over the gateway and are deduplicated by Discord message id, with a backfill on every reconnect.
+Message states: `received` (inbound), `queued`, `sent` (Gmail id stored), `failed` (plain reason). Email gives no delivered or read receipts.
 
 ## Payments
 
@@ -164,29 +163,24 @@ Times are stored as UTC instants plus the IANA time zone.
 
 ## Integrations and sync history
 
-Providers: `stripe`, `discord`, `google_calendar`, `email` (agency Gmail). Secrets are encrypted per workspace and never returned; responses carry only a masked last four.
+Providers: `stripe` (payments), `email` (messaging, agency Gmail), `google_calendar` (calendar), `email_alerts` (notifications, same mailbox). Secrets are encrypted per workspace and never returned; responses carry only a masked last four.
 
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
-| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,label,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretMasked,account?,gatewayOnline?,recentErrors:[{type,message,at}],limits:{summary,can[],cannot[]},perUser}]}` |
+| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,label,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretMasked,account?,agencyAddress?,recentErrors:[{type,message,at}],limits:{summary,can[],cannot[]},perUser}]}` |
 | POST | /integrations/stripe/connect | integrations.manage | `{secretKey:"sk_test_..."}` | `201 {provider,status,secretMasked}`; verifies the key and creates the webhook endpoint; live keys refused |
-| POST | /integrations/discord/connect | integrations.manage | `{appId,publicKey,botToken,customerGuildId,staffGuildId}` | `201`; registers slash commands and starts the gateway |
-| POST | /integrations/email/connect | integrations.manage | `{}` | `201 {authUrl}` Google consent for the agency mailbox |
+| POST | /integrations/email/connect | integrations.manage | `{}` | `201 {authUrl}` Google consent for the agency mailbox; the agency plus-address is derived and stored |
 | POST | /integrations/google_calendar/connect | session | `{}` | `201 {authUrl}` Google consent for the employee's own calendar |
 | POST | /integrations/:provider/test | integrations.manage | - | `{ok:true}` or `{ok:false,error:{code,message,temporary}}` |
 | DELETE | /integrations/:provider | integrations.manage | - | `204` removes secrets and remote registrations, revokes Google grants (audited) |
-| GET | /integrations/:provider/events | integrations.manage or audit.view | `?limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}],nextCursor}` (provider `email` is stored as `gmail`) |
+| GET | /integrations/:provider/events | integrations.manage or audit.view | `?limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}],nextCursor}` (`email` and `email_alerts` share the mailbox's history) |
 | GET | /integrations/email/alerts | integrations.manage | - | `{items:[{id,source:"queue"\|"delivery",kind,status:"delivered"\|"not_delivered"\|"retrying"\|"failed",toUserName,leadId,attempts,error,at}]}` |
-| GET | /integrations/discord/alerts | integrations.manage | - | same shape, for Discord delivery |
 | GET | /me/notifications | - | - | `{alertEmail,effectiveEmail,notifyOnEscalation,notifyOnMessage}` |
 | PUT | /me/notifications | - | `{alertEmail?,notifyOnEscalation?,notifyOnMessage?}` | `{ok}` default alert address is the account email |
-| POST | /me/notifications/discord/link-code | - | - | `201 {code,expiresAt,command}` |
-| GET | /me/notifications/discord | - | - | `{linked,discordUserId}` |
-| DELETE | /me/notifications/discord | - | - | `204` |
 
 Connect failures: `422` for permanent problems (plain message), `503` for temporary ones (network, 5xx and 429 are retried with backoff first).
 
-Webhooks (no session; signature verified): `POST /webhooks/stripe/:workspaceId` (400 on bad signature), `POST /webhooks/discord/:workspaceId` (401 on bad signature). Both return 200 on a duplicate and record rejects.
+Webhook (no session; signature verified): `POST /webhooks/stripe/:workspaceId` returns 400 on a bad signature (recorded as rejected) and 200 on a duplicate event id.
 
 ## Audit log
 

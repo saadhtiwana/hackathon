@@ -63,4 +63,13 @@ The dev branch is seeded with password `Relay-Demo-2026`. Production uses a diff
 
 ### Provider keys
 
-Put provider keys in `.secrets/keys.env` (git-ignored, one `NAME=value` per line, for example `CRONJOB_API_KEY`, `TWILIO_*`, `STRIPE_*`, `GOOGLE_*`, `TELEGRAM_BOT_TOKEN`). Runtime secrets generated for the deployed API live in `.secrets/runtime.env`. Keys are entered into the app through the Integrations page once it exists; they are stored encrypted per workspace.
+Put provider keys in `.secrets/keys.env` (git-ignored, one `NAME=value` per line, for example `CRONJOB_API_KEY`, `STRIPE_*`, `GOOGLE_*`). Runtime secrets generated for the deployed API live in `.secrets/runtime.env`. Keys are entered into the app through the Integrations page; they are stored encrypted per workspace.
+
+## What each integration does
+
+| Need | Provider | Notes |
+| ---- | -------- | ----- |
+| Messaging | Email through the agency Gmail account | Customers write to a plus-address on the mailbox; the inbox is polled every 30 seconds. Twilio blocks Pakistani signups (error 0x07) and Telegram is blocked in Pakistan, so neither is used. |
+| Notifications | Email alerts from the same mailbox | New owners are emailed when a lead is assigned or escalates. |
+| Payments | Stripe, test mode | Checkout sessions and a signed webhook. |
+| Calendar | Google Calendar, OAuth 2.0 | Each employee connects their own account. The Google app is in Testing mode, so only listed test users can connect. |

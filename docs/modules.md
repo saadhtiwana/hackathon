@@ -44,7 +44,7 @@ audit.record(tx: Tx, e: {
 // core/outbox  (Abdullah)
 outbox.enqueue(tx: Tx, job: {
   workspaceId: string;
-  kind: string;                      // e.g. 'notify.telegram', 'message.send', 'lead.ack_timeout'
+  kind: string;                      // e.g. 'notify.escalation', 'email.send', 'lead.ack_timeout'
   payload: Record<string, unknown>;
   runAt?: Date;                      // default now
   maxAttempts?: number;              // default 5
@@ -61,7 +61,7 @@ realtime.publish(workspaceId: string, event: {
 
 // core/integration-events
 integrationEvents.recordInbound(e: {
-  workspaceId: string; provider: 'twilio' | 'stripe' | 'google' | 'telegram';
+  workspaceId: string; provider: 'stripe' | 'google' | 'gmail';
   type: string; externalId: string; result: 'ok' | 'rejected' | 'duplicate' | 'error';
   httpStatus?: number; error?: string; ref?: string;
 }): Promise<{ duplicate: boolean }>;     // unique (provider, workspace, external_id)
@@ -76,7 +76,7 @@ lockLead(tx: Tx, leadId: string): Promise<LeadRow>;   // SELECT ... FOR UPDATE
 
 // modules/leads  (Abdullah) - the only entry points other modules may call
 leadHooks: {
-  createLead(tx: Tx, i: { workspaceId: string; contactId: string; source: 'webform' | 'whatsapp' | 'manual'; opportunityId?: string }): Promise<LeadRow>;
+  createLead(tx: Tx, i: { workspaceId: string; contactId: string; source: 'webform' | 'email' | 'manual'; opportunityId?: string }): Promise<LeadRow>;
   acknowledge(tx: Tx, i: { leadId: string; actorId: string }): Promise<LeadRow>;
   onActivity(tx: Tx, i: { leadId: string; actorId: string | null; type: string }): Promise<void>;   // counts as acknowledgement when actor is the owner
   onAvailabilityChange(tx: Tx, i: { workspaceId: string; userId: string; status: 'available' | 'busy' | 'on_leave' | 'offline' }): Promise<void>;

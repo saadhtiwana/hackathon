@@ -6,7 +6,7 @@ import { api, isApiError, type RealtimeEvent } from "@/lib/api";
 import { useMe } from "@/components/session";
 
 const keys: Record<string, string[][]> = {
-  "lead.created": [["leads"]],
+  "lead.created": [["leads"], ["saved-lists"]],
   "lead.assigned": [["leads"]],
   "lead.escalated": [["leads"]],
   "lead.acknowledged": [["leads"]],

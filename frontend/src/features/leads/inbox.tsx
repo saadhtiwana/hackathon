@@ -14,6 +14,7 @@ import { Countdown } from "@/components/ui/countdown";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Notice } from "@/components/ui/notice";
 import { PageHeader } from "@/components/ui/page-header";
+import { NewLead } from "./components/new-lead";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatTile } from "@/components/ui/stat-tile";
@@ -152,6 +153,7 @@ export function LeadsInbox() {
         description="One owner, one countdown, one next step."
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <NewLead />
             {canAll ? (
               <div className="inline-flex rounded-md border border-border p-0.5" role="group" aria-label="Whose leads">
                 {(["mine", "all"] as const).map((s) => (
@@ -162,6 +164,11 @@ export function LeadsInbox() {
               </div>
             ) : null}
             <Select label="Status" value={status} onValueChange={(v) => setStatus(v as StatusFilter)} options={statusOptions} />
+            {me.data?.workspace.slug ? (
+              <Button asChild size="sm" variant="quiet">
+                <a href={`/f/${me.data.workspace.slug}`} target="_blank" rel="noreferrer">Share enquiry form</a>
+              </Button>
+            ) : null}
           </div>
         }
       />

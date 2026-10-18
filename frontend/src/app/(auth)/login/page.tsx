@@ -28,8 +28,14 @@ export default function LoginPage() {
   const [submitError, setSubmitError] = useState<unknown>(null);
   const form = useForm<FormValues>({ resolver: zodResolver(schema), defaultValues: { email: "", password: "" } });
 
+  // only same-site paths are followed after sign-in
+  const target = () => {
+    const next = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("next");
+    return next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  };
+
   useEffect(() => {
-    if (me.isSuccess) router.replace("/dashboard");
+    if (me.isSuccess) router.replace(target());
   }, [me.isSuccess, router]);
 
   async function onSubmit(values: FormValues) {
@@ -37,7 +43,7 @@ export default function LoginPage() {
     try {
       await api.login(values);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      router.replace("/dashboard");
+      router.replace(target());
     } catch (error) {
       if (isApiError(error) && error.fields) {
         for (const [key, message] of Object.entries(error.fields)) {

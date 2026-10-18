@@ -151,7 +151,11 @@ export function DeskShell({ children }: { children: React.ReactNode }) {
   const signedOut = me.isError && isApiError(me.error) && me.error.status === 401;
 
   useEffect(() => {
-    if (signedOut) router.replace("/login");
+    if (signedOut) {
+      // keep where they were going, so an alert email link lands on the lead after sign-in
+      const here = window.location.pathname + window.location.search;
+      router.replace(here && here !== "/" ? `/login?next=${encodeURIComponent(here)}` : "/login");
+    }
   }, [router, signedOut]);
 
   const openLeads = useQuery({

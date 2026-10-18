@@ -87,6 +87,7 @@ export const gateways = {
       if (e) e.online = true;
     });
     logger.info('discord gateway online', { workspaceId: ws });
+    await integrationEvents.recordOutbound({ workspaceId: ws, provider: 'discord', type: 'gateway.online', result: 'ok', ref: cfg.botName ?? cfg.botId });
     backfill(ws, client).catch((e) => logger.error('discord backfill failed', { err: e instanceof Error ? e.message : String(e) }));
   },
 
@@ -119,7 +120,9 @@ export const gateways = {
       try {
         if (r.encryptedConfig && !entries.get(r.workspaceId)?.online) await this.start(r.workspaceId, JSON.parse(decrypt(r.encryptedConfig)));
       } catch (e) {
-        logger.error('discord gateway failed to start', { workspaceId: r.workspaceId, err: e instanceof Error ? e.message : String(e) });
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.error('discord gateway failed to start', { workspaceId: r.workspaceId, err: msg });
+        await integrationEvents.recordOutbound({ workspaceId: r.workspaceId, provider: 'discord', type: 'gateway.online', result: 'error', error: `Gateway could not start: ${msg}` }).catch(() => {});
       }
     }
   },

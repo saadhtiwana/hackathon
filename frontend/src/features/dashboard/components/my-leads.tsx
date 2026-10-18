@@ -22,7 +22,7 @@ export function MyLeads() {
   const more = (leads.data?.items.length ?? 0) - rows.length;
 
   return (
-    <DashCard title="My leads" href="/leads" className="h-full">
+    <DashCard title="My leads" href="/leads">
       <CardState query={leads} height="h-72">
         {rows.length === 0 ? (
           <p className="rounded-2xl bg-tint-green p-4 text-[13px] text-tint-green-text">Nothing waiting on you. New leads land here with their countdown.</p>

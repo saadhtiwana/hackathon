@@ -55,23 +55,67 @@ export function DashboardPage() {
 
   return (
     <div className="dash -mx-4 -my-7 min-h-full bg-[var(--dash-canvas)] px-4 py-6 sm:-mx-6 sm:px-6 lg:-mx-10 lg:-my-9 lg:rounded-[28px] lg:px-8 lg:py-8">
-      <header className="mb-7 grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
-        <div className="min-w-0">
+      <header className="mb-7 flex flex-col gap-5">
+        <div className="grid items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <p className="text-[13px] text-text-muted">
             {d?.scope === "me" ? "Your desk" : "Company desk"} at {me.data?.workspace.name ?? "Relay"}
           </p>
-          <h1 className="mt-1 text-[30px] leading-tight font-semibold tracking-tight sm:text-[34px]">
+          <div className="flex justify-start lg:justify-center">
+            <Segmented label="Period" value={range} onChange={setRange} options={ranges} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+            <RoundButton label="Notifications" href="/settings/notifications">
+              <Bell className="size-4" aria-hidden />
+            </RoundButton>
+            <RoundButton label="Assignment rules" href="/settings/assignment">
+              <Settings2 className="size-4" aria-hidden />
+            </RoundButton>
+            <DropdownMenu
+              label="Customize dashboard"
+              trigger={
+                <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-[var(--dash-card)] px-4 text-[13px] font-medium hover:border-border-strong">
+                  <SlidersHorizontal className="size-4" aria-hidden />
+                  Customize
+                </button>
+              }
+            >
+              <p className="px-2.5 pt-1.5 pb-1 text-[12px] text-text-muted">Show on my dashboard</p>
+              {WIDGETS.map((w) => (
+                <DropdownItem
+                  key={w.key}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    toggle(w.key);
+                  }}
+                  className="gap-2.5"
+                >
+                  <span className={`inline-flex size-4 items-center justify-center rounded-[5px] border ${show(w.key) ? "border-accent bg-accent text-on-accent" : "border-border-strong"}`} aria-hidden>
+                    {show(w.key) ? <Check className="size-3" /> : null}
+                  </span>
+                  <span className="flex-1">{w.label}</span>
+                  <span className="sr-only">{show(w.key) ? "shown" : "hidden"}</span>
+                </DropdownItem>
+              ))}
+            </DropdownMenu>
+            {me.data ? (
+              <span className="hidden items-center gap-2.5 rounded-full border border-border bg-[var(--dash-card)] py-1 pr-4 pl-1 lg:inline-flex">
+                <Avatar name={me.data.user.name} id={me.data.user.id} size="md" status={me.data.availability} />
+                <span className="leading-tight">
+                  <span className="block text-[13px] font-semibold">{me.data.user.name}</span>
+                  <span className="block text-[11px] text-text-muted">{me.data.role.name}</span>
+                </span>
+              </span>
+            ) : null}
+          </div>
+        </div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <h1 className="text-[30px] leading-tight font-semibold tracking-tight sm:text-[36px]">
             {greeting(now)}
             {first ? `, ${first}` : ""}
           </h1>
-        </div>
-        <div className="flex justify-start lg:justify-center">
-          <Segmented label="Period" value={range} onChange={setRange} options={ranges} />
-        </div>
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
           <form
             role="search"
-            className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-full border border-border bg-[var(--dash-card)] px-4 lg:max-w-56"
+            className="flex h-12 w-full items-center gap-2.5 rounded-full border border-border bg-[var(--dash-card)] px-5 lg:w-[340px]"
             onSubmit={(e) => {
               e.preventDefault();
               if (q.trim()) router.push(`/contacts?q=${encodeURIComponent(q.trim())}`);
@@ -81,50 +125,8 @@ export function DashboardPage() {
             <label htmlFor="dash-search" className="sr-only">
               Search contacts
             </label>
-            <input id="dash-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search contacts" className="min-w-0 flex-1 bg-transparent text-[13px] outline-none" />
+            <input id="dash-search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search contacts, leads, people" className="min-w-0 flex-1 bg-transparent text-[14px] outline-none" />
           </form>
-          <RoundButton label="Notifications" href="/settings/notifications">
-            <Bell className="size-4" aria-hidden />
-          </RoundButton>
-          <RoundButton label="Assignment rules" href="/settings/assignment">
-            <Settings2 className="size-4" aria-hidden />
-          </RoundButton>
-          <DropdownMenu
-            label="Customize dashboard"
-            trigger={
-              <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-[var(--dash-card)] px-4 text-[13px] font-medium hover:border-border-strong">
-                <SlidersHorizontal className="size-4" aria-hidden />
-                Customize
-              </button>
-            }
-          >
-            <p className="px-2.5 pt-1.5 pb-1 text-[12px] text-text-muted">Show on my dashboard</p>
-            {WIDGETS.map((w) => (
-              <DropdownItem
-                key={w.key}
-                onSelect={(e) => {
-                  e.preventDefault();
-                  toggle(w.key);
-                }}
-                className="gap-2.5"
-              >
-                <span className={`inline-flex size-4 items-center justify-center rounded-[5px] border ${show(w.key) ? "border-accent bg-accent text-on-accent" : "border-border-strong"}`} aria-hidden>
-                  {show(w.key) ? <Check className="size-3" /> : null}
-                </span>
-                <span className="flex-1">{w.label}</span>
-                <span className="sr-only">{show(w.key) ? "shown" : "hidden"}</span>
-              </DropdownItem>
-            ))}
-          </DropdownMenu>
-          {me.data ? (
-            <span className="hidden items-center gap-2.5 rounded-full border border-border bg-[var(--dash-card)] py-1 pr-4 pl-1 xl:inline-flex">
-              <Avatar name={me.data.user.name} id={me.data.user.id} size="md" status={me.data.availability} />
-              <span className="leading-tight">
-                <span className="block text-[13px] font-semibold">{me.data.user.name}</span>
-                <span className="block text-[11px] text-text-muted">{me.data.role.name}</span>
-              </span>
-            </span>
-          ) : null}
         </div>
       </header>
 
@@ -148,7 +150,7 @@ export function DashboardPage() {
         </DashCard>
       ) : null}
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-[260px_minmax(0,1fr)_300px]">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-[240px_minmax(0,1fr)_280px]">
         {show("myLeads") ? (
           <div className="min-w-0 md:col-span-1">
             <MyLeads />

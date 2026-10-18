@@ -2,6 +2,7 @@
 
 import { useMe } from "@/components/session";
 import { formatMoney } from "@/lib/format";
+import { bigMoney } from "./money";
 import { can } from "@/lib/permissions";
 import { usePaymentFigures, type Range } from "../api";
 import { CardState, DashCard } from "./dash-card";
@@ -28,19 +29,29 @@ export function PaymentsCard({ range }: { range: Range }) {
   const values = rows.map((r) => ({ ...r, ...by(r.key) }));
   const max = Math.max(1, ...values.map((v) => v.count));
   const money = (c: number | null | undefined) => (c == null ? "–" : seeValues ? formatMoney(c, currency) : "••••");
+  const big = (c: number | null | undefined) => {
+    if (c == null) return <span>–</span>;
+    if (!seeValues) return <span>••••</span>;
+    const m = bigMoney(c, currency);
+    return (
+      <span title={m.exact} aria-label={m.exact}>
+        {m.text}
+      </span>
+    );
+  };
 
   return (
     <DashCard title="Payments" href="/payments">
       <CardState query={figures} height="h-64">
-        <div className="mb-6 grid grid-cols-2 gap-4">
-          <div className="rounded-2xl bg-tint-green p-4 text-tint-green-text">
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
+          <div className="min-w-0 rounded-2xl bg-tint-green p-4 text-tint-green-text">
             <p className="text-[12px] font-medium">Collected this month</p>
-            <p className="mt-1 text-[26px] leading-tight font-semibold tracking-tight tabular-nums">{money(d?.collectedThisMonthCents ?? 0)}</p>
+            <p className="mt-1 truncate text-[22px] leading-tight font-semibold tracking-tight tabular-nums sm:text-[28px]">{big(d?.collectedThisMonthCents ?? 0)}</p>
             <p className="text-[11px] opacity-80">Paid and confirmed, minus refunds</p>
           </div>
-          <div className="rounded-2xl bg-accent-soft p-4 text-accent-text">
+          <div className="min-w-0 rounded-2xl bg-accent-soft p-4 text-accent-text">
             <p className="text-[12px] font-medium">Projected</p>
-            <p className="mt-1 text-[26px] leading-tight font-semibold tracking-tight tabular-nums">{money(d?.projectedCents)}</p>
+            <p className="mt-1 truncate text-[22px] leading-tight font-semibold tracking-tight tabular-nums sm:text-[28px]">{big(d?.projectedCents)}</p>
             <p className="text-[11px] opacity-80">{d?.projectedCents == null ? "Company view with values only" : "Open pipeline plus open requests"}</p>
           </div>
         </div>

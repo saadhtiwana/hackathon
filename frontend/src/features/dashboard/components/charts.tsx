@@ -37,18 +37,23 @@ export function PipelineDonut({ data, currency, canValues }: { data: DashboardDa
           <span className="text-[11px] text-text-muted">open deals</span>
         </span>
       </div>
-      <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[12px]">
+      <ul className="mt-4 grid w-full gap-x-4 gap-y-2 text-[12px] sm:grid-cols-2">
         {stages.map((s, i) => (
-          <li key={s.stageId} className="inline-flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full" style={{ background: palette[i % palette.length] }} aria-hidden />
-            <span className="text-text-muted">{s.stageName}:</span>
-            <span className="font-medium tabular-nums">
-              {s.count}
-              {canValues && s.valueCents != null ? ` · ${formatMoney(s.valueCents, currency)}` : ""}
-            </span>
+          <li key={s.stageId} className="flex min-w-0 items-center gap-2">
+            <span className="size-2.5 shrink-0 rounded-full" style={{ background: palette[i % palette.length] }} aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-text-muted">{s.stageName}</span>
+            <span className="font-semibold tabular-nums">{s.count}</span>
+            {canValues && s.valueCents != null ? (
+              <span className="sr-only">{formatMoney(s.valueCents, currency)}</span>
+            ) : null}
           </li>
         ))}
       </ul>
+      {canValues && data?.totalCents != null ? (
+        <p className="mt-3 text-[12px] text-text-muted">
+          Open value <span className="font-semibold text-text tabular-nums">{formatMoney(data.totalCents, currency)}</span>
+        </p>
+      ) : null}
       {!canValues ? <p className="mt-2 text-[11px] text-text-muted">Counts only. Values need the See opportunity values permission.</p> : null}
     </div>
   );

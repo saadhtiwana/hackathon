@@ -14,10 +14,10 @@ function clock(seconds: number | null) {
 
 function Tile({ href, value, label, hint, icon: Icon, tint }: { href: string; value: React.ReactNode; label: string; hint?: string; icon: LucideIcon; tint: string }) {
   return (
-    <Link href={href} className={cn("group flex min-w-0 flex-col rounded-[20px] p-5 hover:-translate-y-0.5 hover:shadow-[var(--dash-shadow)]", tint)}>
+    <Link href={href} className={cn("group flex min-w-0 flex-col rounded-[20px] p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-[var(--dash-shadow)]", tint)}>
       <span className="flex items-start justify-between gap-3">
-        <span className="text-[36px] leading-none font-semibold tracking-tight tabular-nums">{value}</span>
-        <span className="inline-flex size-11 items-center justify-center rounded-2xl bg-white/70 dark:bg-black/20" aria-hidden>
+        <span className="min-w-0 truncate text-[28px] leading-none font-semibold tracking-tight tabular-nums sm:text-[36px]">{value}</span>
+        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-white/70 sm:size-11 dark:bg-black/20" aria-hidden>
           <Icon className="size-5" />
         </span>
       </span>

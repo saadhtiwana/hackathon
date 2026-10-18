@@ -30,6 +30,11 @@ export const integrationEventsApi = {
     await db.insert(integrationEvents).values({ ...e, direction: 'out', externalId: e.externalId ?? null, httpStatus: e.httpStatus ?? null, error: e.error ?? null, ref: e.ref ?? null });
   },
 
+  // Lets a provider retry an event whose processing failed after it was recorded.
+  async forget(id: string): Promise<void> {
+    await db.delete(integrationEvents).where(eq(integrationEvents.id, id));
+  },
+
   async markResult(id: string, result: 'ok' | 'error', error?: string): Promise<void> {
     await db.update(integrationEvents).set({ result, error: error ?? null }).where(eq(integrationEvents.id, id));
   },

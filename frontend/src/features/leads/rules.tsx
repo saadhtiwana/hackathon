@@ -20,7 +20,7 @@ import { useToast } from "@/components/ui/toast";
 import { can } from "@/lib/permissions";
 import { leadKeys, leadsApi, useMembers, useRules, type AssignmentRules, type EscalationKind } from "./api";
 
-const crumbs = [{ href: "/", label: "Desk" }, { label: "Assignment rules" }];
+const crumbs = [{ href: "/dashboard", label: "Desk" }, { label: "Assignment rules" }];
 
 const kindOptions: { value: EscalationKind; label: string }[] = [
   { value: "next_eligible", label: "Next eligible person" },

@@ -31,7 +31,7 @@ export function IntegrationsPage() {
 
   return (
     <>
-      <Breadcrumbs items={[{ href: "/", label: "Desk" }, { label: "Integrations" }]} />
+      <Breadcrumbs items={[{ href: "/dashboard", label: "Desk" }, { label: "Integrations" }]} />
       <PageHeader title="Integrations" description="Payments, email and calendars: what is connected, what it can do, and what went wrong." />
       <Suspense fallback={null}>
         <OAuthResult />

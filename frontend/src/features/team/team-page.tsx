@@ -129,7 +129,7 @@ export function TeamPage() {
 
   return (
     <>
-      <Breadcrumbs items={[{ href: "/", label: "Desk" }, { label: "Team" }]} />
+      <Breadcrumbs items={[{ href: "/dashboard", label: "Desk" }, { label: "Team" }]} />
       <PageHeader
         title="Team"
         description="Who is on the desk, what they can do, and whether they can be booked."

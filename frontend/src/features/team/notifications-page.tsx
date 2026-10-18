@@ -26,7 +26,7 @@ export function NotificationsPage() {
   const prefs = useQuery({ queryKey: key, queryFn: () => apiFetch<Prefs>("/me/notifications") });
   return (
     <>
-      <Breadcrumbs items={[{ href: "/", label: "Desk" }, { label: "Notifications" }]} />
+      <Breadcrumbs items={[{ href: "/dashboard", label: "Desk" }, { label: "Notifications" }]} />
       <PageHeader title="Notifications" description="Where Relay reaches you when a lead escalates to you, and your calendar for bookings." />
       <div className="flex max-w-2xl flex-col gap-6">
         {prefs.isLoading ? (

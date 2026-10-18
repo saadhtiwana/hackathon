@@ -16,13 +16,14 @@ export interface EventInput {
   start: Date;
   end: Date;
   timeZone: string;
+  attendeeEmail?: string | null;
 }
 
-const body = (e: EventInput) => ({ summary: e.title, description: e.description, start: { dateTime: e.start.toISOString(), timeZone: e.timeZone }, end: { dateTime: e.end.toISOString(), timeZone: e.timeZone } });
+const body = (e: EventInput) => ({ summary: e.title, description: e.description, ...(e.attendeeEmail ? { attendees: [{ email: e.attendeeEmail }] } : {}), start: { dateTime: e.start.toISOString(), timeZone: e.timeZone }, end: { dateTime: e.end.toISOString(), timeZone: e.timeZone } });
 
-export const createEvent = (store: TokenStore, e: EventInput) => googleFetch<{ id: string; htmlLink: string }>(store, `${CAL}/calendars/primary/events`, { method: 'POST', body: body(e) });
+export const createEvent = (store: TokenStore, e: EventInput) => googleFetch<{ id: string; htmlLink: string }>(store, `${CAL}/calendars/primary/events?sendUpdates=all`, { method: 'POST', body: body(e) });
 export const patchEvent = (store: TokenStore, id: string, e: Partial<EventInput> & { title?: string }) =>
-  googleFetch(store, `${CAL}/calendars/primary/events/${encodeURIComponent(id)}`, {
+  googleFetch(store, `${CAL}/calendars/primary/events/${encodeURIComponent(id)}?sendUpdates=all`, {
     method: 'PATCH',
     body: {
       ...(e.title ? { summary: e.title } : {}),
@@ -31,4 +32,4 @@ export const patchEvent = (store: TokenStore, id: string, e: Partial<EventInput>
       ...(e.end && e.timeZone ? { end: { dateTime: e.end.toISOString(), timeZone: e.timeZone } } : {}),
     },
   });
-export const deleteEvent = (store: TokenStore, id: string) => googleFetch(store, `${CAL}/calendars/primary/events/${encodeURIComponent(id)}`, { method: 'DELETE' });
+export const deleteEvent = (store: TokenStore, id: string) => googleFetch(store, `${CAL}/calendars/primary/events/${encodeURIComponent(id)}?sendUpdates=all`, { method: 'DELETE' });

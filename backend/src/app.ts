@@ -11,6 +11,7 @@ import { workspaceRouter } from './modules/workspace/routes.js';
 import { usersRouter } from './modules/users/routes.js';
 import { rolesRouter } from './modules/roles/routes.js';
 import { crmRouter } from './modules/crm/routes.js';
+import { activitiesRouter } from './modules/crm/activities.js';
 import { leadsRouter } from './modules/leads/index.js';
 import { internalRouter } from './core/scheduler/index.js';
 import { integrationsRouter } from './modules/integrations/routes.js';
@@ -59,6 +60,7 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(activitiesRouter);
   api.use(dashboardRouter);
   api.use(auditRouter);
   api.use(savedListsRouter);

@@ -62,7 +62,7 @@ export async function createAppointment(a: AuthContext, i: { userId: string; con
   const conflicts = busy.filter((b) => new Date(b.start) < i.end && new Date(b.end) > i.start);
   if (conflicts.length && !i.force) throw conflict(`${member.name} is busy at that time`, 'Choose another time, or book anyway', 'calendar_conflict', { conflicts });
 
-  const ev = await calendarCall(ws, i.userId, member.name, 'calendar.event.create', (s) => createEvent(s, { title: i.title, description: describe(contact.name, contact.phone, contact.email, contact.id, i.notes), start: i.start, end: i.end, timeZone: i.timeZone }));
+  const ev = await calendarCall(ws, i.userId, member.name, 'calendar.event.create', (s) => createEvent(s, { title: i.title, description: describe(contact.name, contact.phone, contact.email, contact.id, i.notes), start: i.start, end: i.end, timeZone: i.timeZone, attendeeEmail: contact.email }));
   const appt = await db.transaction(async (tx) => {
     const [row] = await tx.insert(appointments).values({ workspaceId: ws, userId: i.userId, contactId: i.contactId, opportunityId: i.opportunityId ?? null, googleEventId: ev.id, title: i.title, notes: i.notes ?? null, startsAt: i.start, endsAt: i.end, timezone: i.timeZone, status: 'scheduled' }).returning();
     await audit.record(tx, { workspaceId: ws, actorId: a.userId, action: 'appointment.created', targetType: 'appointment', targetId: row!.id, after: { userId: i.userId, contactId: i.contactId, startsAt: i.start, endsAt: i.end, timeZone: i.timeZone, forced: !!(conflicts.length && i.force) } });
@@ -70,7 +70,7 @@ export async function createAppointment(a: AuthContext, i: { userId: string; con
     return row!;
   });
   realtime.publish(ws, { type: 'appointment.updated', ids: { appointmentId: appt.id, contactId: i.contactId, userId: i.userId } });
-  return { ...appt, calendarLink: ev.htmlLink };
+  return { ...appt, calendarLink: ev.htmlLink, inviteSentTo: contact.email ?? null };
 }
 
 export async function updateAppointment(a: AuthContext, id: string, patch: { start?: Date; end?: Date; timeZone?: string; title?: string; notes?: string; force?: boolean }) {

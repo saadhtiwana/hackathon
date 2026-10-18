@@ -96,19 +96,20 @@ export async function listForAddress(store: TokenStore, address: string, afterEp
 
 const enc = (s: string) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${Buffer.from(s).toString('base64')}?=`);
 
-export async function sendEmail(store: TokenStore, m: { from: string; to: string; subject: string; body: string; replyTo?: string | null; threadId?: string | null; inReplyTo?: string | null; references?: string | null }) {
-  const lines = [
+export async function sendEmail(store: TokenStore, m: { from: string; to: string; subject: string; body: string; html?: string; replyTo?: string | null; threadId?: string | null; inReplyTo?: string | null; references?: string | null }) {
+  const b64lines = (t: string) => (Buffer.from(t).toString('base64').match(/.{1,76}/g) ?? []).join('\r\n');
+  const head = [
     `From: ${m.from}`,
     `To: ${m.to}`,
     ...(m.replyTo ? [`Reply-To: ${m.replyTo}`] : []),
     `Subject: ${enc(m.subject)}`,
     'MIME-Version: 1.0',
-    'Content-Type: text/plain; charset=UTF-8',
-    'Content-Transfer-Encoding: base64',
     ...(m.inReplyTo ? [`In-Reply-To: ${m.inReplyTo}`, `References: ${[m.references, m.inReplyTo].filter(Boolean).join(' ')}`] : []),
-    '',
-    (Buffer.from(m.body).toString('base64').match(/.{1,76}/g) ?? []).join('\r\n'),
   ];
+  const boundary = `relay_${Date.now().toString(36)}`;
+  const lines = m.html
+    ? [...head, `Content-Type: multipart/alternative; boundary="${boundary}"`, '', `--${boundary}`, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64lines(m.body), `--${boundary}`, 'Content-Type: text/html; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64lines(m.html), `--${boundary}--`, '']
+    : [...head, 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '', b64lines(m.body)];
   const raw = Buffer.from(lines.join('\r\n')).toString('base64url');
   return googleFetch<{ id: string; threadId: string }>(store, `${G}/messages/send`, { method: 'POST', body: { raw, ...(m.threadId ? { threadId: m.threadId } : {}) } });
 }

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../../core/db/client.js';
-import { contacts, leads, memberships, users } from '../../../core/db/schema/index.js';
+import { contacts, leads, memberships, users, workspaces } from '../../../core/db/schema/index.js';
 import { audit } from '../../../core/audit/index.js';
 import { env } from '../../../core/env.js';
 import { asyncHandler, unprocessable } from '../../../core/errors.js';
@@ -35,12 +35,21 @@ async function emailAlert(job: OutboxJob, type: Type) {
   const name = row?.name ?? 'A lead';
   const source = p.source ?? row?.source ?? 'unknown';
   const link = `${env.APP_URL.replace(/\/$/, '')}${p.linkPath ?? `/leads/${p.leadId}`}`;
-  const subject = type === 'alert.escalation' ? `Lead escalated to you: ${name}` : `New lead assigned to you: ${name}`;
-  const why = p.reason === 'ack_expired' ? 'the acknowledgement window ran out' : (p.reason ?? 'escalated');
-  const body =
-    type === 'alert.escalation'
-      ? [`Lead: ${name}`, `Source: ${source}`, `Reason: ${why}${p.kind ? `, ${KIND_TEXT[p.kind] ?? p.kind}` : ''}`, ...(p.level ? [`Level: ${p.level}`] : []), '', `Open the lead: ${link}`].join('\n')
-      : [`Lead: ${name}`, `Source: ${source}`, '', `Acknowledge it before the window runs out: ${link}`].join('\n');
+  const SOURCE: Record<string, string> = { email: 'Email', webform: 'Web form', manual: 'Manual', whatsapp: 'WhatsApp', discord: 'Discord' };
+  const sourceLabel = SOURCE[source] ?? source;
+  const [wsRow] = await db.select({ name: workspaces.name }).from(workspaces).where(eq(workspaces.id, ws));
+  const subject = type === 'alert.escalation' ? `Lead escalated to you: ${name} (${sourceLabel})` : `New lead assigned to you: ${name} (${sourceLabel})`;
+  const why =
+    type === 'alert.lead_assigned'
+      ? 'A new lead was assigned to you. Please acknowledge it before the window runs out.'
+      : p.reason === 'ack_expired'
+        ? `Nobody acknowledged it in time, so it was passed to you${p.level ? ` (level ${p.level})` : ''}${p.kind === 'manager' ? ' as the manager' : ''}.`
+        : p.reason === 'no_eligible_employee'
+          ? 'Nobody on the team was available, so it was sent to you.'
+          : 'It was escalated to you.';
+  const body = [`Lead: ${name}`, `Source: ${sourceLabel}`, why, '', `Open lead: ${link}`, '', `Sent by Relay for ${wsRow?.name ?? 'your workspace'}`].join('\n');
+  const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f2ec;font-family:Inter,Arial,sans-serif;color:#17140f"><div style="max-width:520px;margin:0 auto;padding:24px"><div style="background:#fff;border:1px solid #e6e2d8;border-radius:12px;padding:24px"><p style="margin:0 0 4px;font-size:12px;color:#6b665c;letter-spacing:.02em;text-transform:uppercase">${type === 'alert.escalation' ? 'Lead escalated to you' : 'New lead assigned to you'}</p><h1 style="margin:0 0 12px;font-size:22px;line-height:1.25">${esc(name)}</h1><p style="margin:0 0 4px;font-size:14px"><strong>Source:</strong> ${esc(sourceLabel)}</p><p style="margin:12px 0 20px;font-size:14px;line-height:1.5">${esc(why)}</p><a href="${esc(link)}" style="display:inline-block;background:#17140f;color:#fffdf8;text-decoration:none;font-weight:600;font-size:14px;padding:11px 18px;border-radius:8px">Open lead</a></div><p style="margin:14px 4px 0;font-size:12px;color:#8a857a">Sent by Relay for ${esc(wsRow?.name ?? 'your workspace')}</p></div></body></html>`;
 
   const store = mailboxStore(ws);
   try {
@@ -48,7 +57,7 @@ async function emailAlert(job: OutboxJob, type: Type) {
     if (!tokens) return void (await record('error', 'not delivered: the agency mailbox is not connected'));
     const from = tokens.email ?? (await profile(store)).emailAddress;
     const reply = await agencyAddress(ws);
-    const sent = await sendEmail(store, { from, to, subject, body, replyTo: reply });
+    const sent = await sendEmail(store, { from, to, subject, body, html, replyTo: reply });
     await record('ok', undefined, sent.id);
   } catch (e) {
     const pe = e instanceof ProviderError ? e : new ProviderError('Unexpected problem sending the alert', true, 'unexpected');

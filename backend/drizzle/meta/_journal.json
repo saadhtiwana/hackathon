@@ -36,6 +36,13 @@
       "when": 1792304689362,
       "tag": "0004_discord_provider_payment_failure",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792306062424,
+      "tag": "0005_discord_messaging",
+      "breakpoints": true
     }
   ]
 }

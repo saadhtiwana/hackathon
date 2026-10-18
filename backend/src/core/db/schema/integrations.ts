@@ -82,3 +82,18 @@ export const outboxJobs = pgTable(
     index('outbox_jobs_due_idx').on(t.runAt).where(sql`${t.status} = 'pending'`),
   ],
 );
+
+// One-time codes an employee types as /link <code> in the staff Discord server (I4.3).
+export const discordLinkCodes = pgTable(
+  'discord_link_codes',
+  {
+    id: id(),
+    workspaceId: ws(),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull().unique(),
+    expiresAt: tstz('expires_at').notNull(),
+    usedAt: tstz('used_at'),
+    createdAt: createdAt(),
+  },
+  (t) => [index('discord_link_codes_workspace_idx').on(t.workspaceId)],
+);

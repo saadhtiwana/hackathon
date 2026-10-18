@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { boolean, index, integer, pgTable, primaryKey, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { availability, baseLevel } from './enums.js';
 import { createdAt, id, tstz, updatedAt } from './_helpers.js';
@@ -51,6 +52,7 @@ export const memberships = pgTable(
     availability: availability('availability').notNull().default('available'),
     availabilityChangedAt: tstz('availability_changed_at'),
     telegramChatId: text('telegram_chat_id'),
+    discordUserId: text('discord_user_id'),
     notifyOnEscalation: boolean('notify_on_escalation').notNull().default(true),
     notifyOnMessage: boolean('notify_on_message').notNull().default(false),
     active: boolean('active').notNull().default(true),
@@ -59,6 +61,7 @@ export const memberships = pgTable(
   (t) => [
     index('memberships_workspace_idx').on(t.workspaceId),
     uniqueIndex('memberships_ws_user_uq').on(t.workspaceId, t.userId),
+    uniqueIndex('memberships_ws_discord_uq').on(t.workspaceId, t.discordUserId).where(sql`${t.discordUserId} is not null`),
     index('memberships_user_idx').on(t.userId),
   ],
 );

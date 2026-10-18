@@ -34,6 +34,7 @@ export const contacts = pgTable(
     ownerId: uuid('owner_id').references(() => users.id, { onDelete: 'set null' }),
     optedOut: boolean('opted_out').notNull().default(false),
     optOutReason: text('opt_out_reason'),
+    discordUserId: text('discord_user_id'),
     custom: jsonb('custom').notNull().default({}),
     version: integer('version').notNull().default(1),
     createdAt: createdAt(),
@@ -42,6 +43,7 @@ export const contacts = pgTable(
   (t) => [
     index('contacts_workspace_idx').on(t.workspaceId),
     uniqueIndex('contacts_ws_phone_uq').on(t.workspaceId, t.phone).where(sql`${t.phone} is not null`),
+    uniqueIndex('contacts_ws_discord_uq').on(t.workspaceId, t.discordUserId).where(sql`${t.discordUserId} is not null`),
     index('contacts_company_idx').on(t.companyId),
     index('contacts_owner_idx').on(t.ownerId),
   ],

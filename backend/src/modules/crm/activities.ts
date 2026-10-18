@@ -41,7 +41,7 @@ activitiesRouter.get('/leads/:id/enquiry', requirePermission('crm.view'), asyncH
     .where(and(eq(conversations.workspaceId, a.workspaceId), eq(conversations.contactId, lead.contactId), eq(messages.direction, 'in')))
     .orderBy(asc(messages.createdAt))
     .limit(1);
-  let body = m?.body ?? null;
+  let body: string | null = m?.body ?? null;
   let at: Date | null = m?.at ?? null;
   if (!body) {
     const [n] = await db.select({ data: activities.data, at: activities.createdAt }).from(activities).where(and(eq(activities.workspaceId, a.workspaceId), eq(activities.leadId, lead.id), eq(activities.type, 'note'))).orderBy(asc(activities.createdAt)).limit(1);

@@ -20,6 +20,7 @@ export const payments = pgTable(
     refundedCents: bigint('refunded_cents', { mode: 'number' }).notNull().default(0),
     url: text('url'),
     description: text('description'),
+    failureReason: text('failure_reason'),
     paidAt: tstz('paid_at'),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

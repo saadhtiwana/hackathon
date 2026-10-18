@@ -1,26 +1,108 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root,
+.light {
+  --paper: #f4f1ea;
+  --surface: #fffdf8;
+  --ink: #17140f;
+  --ink-muted: #5a544a;
+  --line: #dcd5c7;
+  --signal: #c8391b;
+  --on-signal: #fffdf8;
+  --ok: #2e6a3e;
+  --warn: #9a5a00;
+  --focus: #1f4fd1;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --paper: #11100e;
+  --surface: #1a1916;
+  --ink: #ece7dc;
+  --ink-muted: #a39c8f;
+  --line: #2e2b26;
+  --signal: #ff6b47;
+  --on-signal: #11100e;
+  --ok: #6bbf7f;
+  --warn: #e0a44a;
+  --focus: #7ea2ff;
+  color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.light) {
+    --paper: #11100e;
+    --surface: #1a1916;
+    --ink: #ece7dc;
+    --ink-muted: #a39c8f;
+    --line: #2e2b26;
+    --signal: #ff6b47;
+    --on-signal: #11100e;
+    --ok: #6bbf7f;
+    --warn: #e0a44a;
+    --focus: #7ea2ff;
+    color-scheme: dark;
   }
 }
 
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-signal: var(--signal);
+  --color-on-signal: var(--on-signal);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-plex-sans), "IBM Plex Sans", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", ui-monospace, monospace;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+}
+
+* {
+  border-color: var(--line);
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--focus) 24%, transparent);
+}
+
+[cmdk-overlay] {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

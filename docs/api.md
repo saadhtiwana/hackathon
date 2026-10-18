@@ -141,6 +141,8 @@ Message states: `received` (inbound), `queued`, `sent` (Gmail id stored), `faile
 | POST | /payments/:id/expire | crm.edit | - | expires the open Checkout session; `{payment,...}` with status `expired` |
 | GET | /payments/summary | crm.view_values | `?from&to` | `{currency,collectedCents,refundedCents,openPipelineCents,unpaidRequestedCents,projectedCents}` |
 
+| GET | /public/payments/:id | public | - | `{reference,status,amountCents,currency,workspaceName,checkoutUrl}` for the `/pay/:id` page Stripe returns customers to; no other data, `checkoutUrl` only while the request is open |
+
 Webhook: `POST /webhooks/stripe/:workspaceId` (raw body, `Stripe-Signature` verified with that workspace's secret). Forged or unsigned requests get `400` and are recorded as rejected; a repeated event id returns `200 {duplicate:true}` and changes nothing; processing errors return `500` so Stripe retries.
 
 ## Google: calendar and agency mailbox
@@ -182,6 +184,16 @@ Connect failures: `422` for permanent problems (plain message), `503` for tempor
 
 Webhook (no session; signature verified): `POST /webhooks/stripe/:workspaceId` returns 400 on a bad signature (recorded as rejected) and 200 on a duplicate event id.
 
+## Notifications (email alerts)
+
+When a lead is assigned or escalates, the new owner is emailed from the agency mailbox (subject "Lead escalated to you: <contact>", with the lead, source, reason, level and a link). Failed sends retry up to 5 times with backoff and stay visible to admins.
+
+| Method | Path | Perm | Request | Response |
+|---|---|---|---|---|
+| GET | /me/notifications | - | - | `{alertEmail,effectiveEmail,notifyOnEscalation,notifyOnMessage}` the default alert address is the account email |
+| PUT | /me/notifications | - | `{alertEmail?,notifyOnEscalation?,notifyOnMessage?}` | `{ok}` audited |
+| GET | /integrations/email/alerts | integrations.manage | - | `{items:[{id,source:"queue"\|"delivery",kind,status:"delivered"\|"not_delivered"\|"retrying"\|"failed",toUserName,leadId,attempts,error,at}]}` |
+
 ## Audit log
 
 | Method | Path | Perm | Request | Response |
@@ -192,13 +204,16 @@ No POST, PATCH or DELETE exists for audit entries.
 
 ## Dashboard
 
+Figures follow section 7 and are computed once in the API; the records behind each figure come from the same predicates, so counts always match. Owner, Admin and anyone with leads.reassign get the company; everyone else gets their own desk.
+
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
-| GET | /dashboard | - | `?scope=me\|company` (company needs leads.reassign) | `{newLeadsToday,openPipelineByStage:[{stageId,name,valueCents}]\|null,avgTimeToFirstResponseSec,recoveryQueueCount,escalationsLast24h,availability:{available,busy,onLeave,offline},upcomingAppointments[],collectedThisMonthCents}` |
-| GET | /dashboard/prefs | - | - | `{hidden:["newLeadsToday"]}` |
-| PUT | /dashboard/prefs | - | `{hidden:[string]}` | same |
+| GET | /dashboard | - | `?scope=me\|company&range=today\|week\|month` (company needs leads.reassign) | `{scope,generatedAt,timezone,hidden[],range:{key,from},newLeadsToday,newLeads,trend:[{date,leads,acknowledged}],pipelineValue:{byStage:[{stageId,stageName,pipelineId,valueCents,count}],totalCents}\|null,projectedCents,avgFirstResponse:{seconds,sample,windowDays},recoveryQueue,escalations24h:{automatic,manualReassignments},availability:{counts,members:[{userId,name,status,openLeads}]},upcomingAppointments:{count,items[]},collectedThisMonthCents,paymentsByStatus:[{status,count,amountCents,refundedCents}]}`; `pipelineValue`, `projectedCents` and money fields need crm.view_values |
+| GET | /dashboard/records/:figure | - | `?scope&limit` with figure `new-leads\|escalations\|recovery\|payments\|appointments` | `{items:[{id,title,detail,at,href}]}` exactly the records counted in the figure |
+| GET | /dashboard/prefs | - | - | `{hidden:["newLeadsToday"],figures[]}` |
+| PUT | /dashboard/prefs | - | `{hidden:[string]}` | `{hidden}` saved per user |
 
-Drill-down uses the list endpoints with the same filters (`/leads`, `/leads/recovery`, `/opportunities`, `/appointments`, `/payments`).
+Collected = paid minus refunds; projected = open pipeline value plus unpaid payment requests; both come from the single revenue module.
 
 ## Realtime
 

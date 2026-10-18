@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BellRing, CalendarCheck, CreditCard, Inbox, LayoutDashboard, Mail, ScrollText, ShieldCheck, Users } from "lucide-react";
-import { Lockup } from "@/components/brand/logo";
+import { ArrowRight, BellRing, CalendarCheck, CircleCheck, CreditCard, Inbox, LayoutDashboard, Mail, Repeat2, ScrollText, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { RelayMark } from "@/components/brand/relay-mark";
 import { useMe } from "@/components/session";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/cn";
@@ -155,14 +155,113 @@ const FEATURES = [
   { icon: LayoutDashboard, title: "Numbers that match", body: "Every figure on the dashboard opens the exact records it counted." },
 ];
 
-const TIMELINE = [
-  ["Email received", "Property enquiry from Rare Gaming Legacy", "10:12"],
-  ["Assigned to Ahmad Mustafa", "Round-robin, countdown started", "10:12"],
-  ["Escalated to Abdullah Khan", "Level 1, window expired", "10:12"],
-  ["Acknowledged by Abdullah Khan", "First response 0:28", "10:13"],
-  ["Visit booked", "Tomorrow 12:00, customer invited", "10:20"],
-  ["Payment received", "Rs 25,000, confirmed by Stripe", "10:41"],
+
+function Frame({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_24px_60px_-30px_rgba(23,20,15,0.25)]">
+      <div className="flex items-center gap-2 border-b border-border bg-surface-muted/60 px-4 py-2.5 text-[12px] text-text-muted">
+        <span className="font-medium text-text">{title}</span>
+        <span className="ml-auto font-mono">margalla-estates</span>
+      </div>
+      <div className="p-4 sm:p-6">{children}</div>
+    </div>
+  );
+}
+
+const TOUR = [
+  {
+    key: "leads",
+    label: "Leads",
+    text: "Every lead shows its owner and the time left to acknowledge. Anything late is flagged in plain words.",
+    view: (
+      <Frame title="Leads">
+        <ul className="divide-y divide-border text-[14px]">
+          {[
+            ["Rare Gaming Legacy", "Email", "Ahmad Mustafa", "0:21", "Waiting for ack"],
+            ["Nida Siddiqui", "Web form", "Abdullah Khan", "Acknowledged", "First response 0:34"],
+            ["Imran Raza", "Manual", "Saad Hayat", "Acknowledged", "First response 1:02"],
+          ].map(([n, src, o, t, sub]) => (
+            <li key={n} className="grid grid-cols-[1fr_auto] items-center gap-3 py-3 sm:grid-cols-[1.4fr_1fr_1fr_1fr]">
+              <span className="min-w-0"><span className="block truncate font-medium">{n}</span><span className="block text-[12px] text-text-muted">{src}</span></span>
+              <span className="hidden text-text-muted sm:block">{o}</span>
+              <span className="text-right font-mono text-[13px] tabular-nums sm:text-left">{t}</span>
+              <span className="hidden text-[12px] text-text-muted sm:block">{sub}</span>
+            </li>
+          ))}
+        </ul>
+      </Frame>
+    ),
+  },
+  {
+    key: "inbox",
+    label: "Inbox",
+    text: "Customer email arrives as a conversation. Reply here and it goes out in the same thread.",
+    view: (
+      <Frame title="Inbox">
+        <div className="flex flex-col gap-3 text-[14px]">
+          <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3">Interested in a 10 Marla house in DHA Phase 2, budget 3.5 crore.<span className="mt-1 block text-[11px] text-text-muted">Rare Gaming Legacy · 10:12</span></div>
+          <div className="ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-text px-4 py-3 text-canvas">Thanks for writing. We have a few options in range. Can we arrange a visit tomorrow?<span className="mt-1 block text-[11px] text-canvas/60">You · sent 10:14</span></div>
+          <div className="max-w-[80%] rounded-2xl rounded-bl-md bg-surface-muted px-4 py-3">Tomorrow 12pm works.<span className="mt-1 block text-[11px] text-text-muted">Rare Gaming Legacy · 10:18</span></div>
+        </div>
+      </Frame>
+    ),
+  },
+  {
+    key: "payments",
+    label: "Payments",
+    text: "Send a checkout link from the contact. It flips to Paid on its own, and collected money is kept apart from expected money.",
+    view: (
+      <Frame title="Payments">
+        <div className="grid grid-cols-2 divide-x divide-border rounded-xl border border-border">
+          <div className="p-4"><p className="text-[12px] text-text-muted">Collected</p><p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] tabular-nums">Rs 25,000</p></div>
+          <div className="p-4"><p className="text-[12px] text-text-muted">Awaiting payment</p><p className="mt-1 text-[26px] font-semibold tracking-[-0.02em] tabular-nums">Rs 0</p></div>
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-surface-muted px-4 py-3 text-[14px]">
+          <span><span className="block font-medium">Rare Gaming Legacy</span><span className="block text-[12px] text-text-muted">Booking token</span></span>
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-medium"><CircleCheck className="size-4" aria-hidden /> Paid</span>
+        </div>
+      </Frame>
+    ),
+  },
+] as const;
+
+function ProductTour() {
+  const [tab, setTab] = useState<(typeof TOUR)[number]["key"]>("leads");
+  const cur = TOUR.find((t) => t.key === tab)!;
+  return (
+    <div className="grid items-start gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+      <div data-reveal>
+        <div role="tablist" aria-label="Product tour" className="inline-flex rounded-lg bg-surface-muted p-0.5">
+          {TOUR.map((t) => (
+            <button key={t.key} role="tab" aria-selected={tab === t.key} onClick={() => setTab(t.key)} className={cn("h-9 rounded-md px-4 text-[13px] font-medium", tab === t.key ? "bg-surface text-text shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-text-muted hover:text-text")}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-5 max-w-[38ch] text-[16px] leading-relaxed text-text-muted">{cur.text}</p>
+      </div>
+      <div data-reveal style={{ "--d": "0.08s" } as React.CSSProperties} key={tab} className="animate-fade-in">{cur.view}</div>
+    </div>
+  );
+}
+
+const TIMELINE: [string, string, string, typeof Mail][] = [
+  ["Email received", "Property enquiry from Rare Gaming Legacy", "10:12", Mail],
+  ["Assigned to Ahmad Mustafa", "Round-robin, countdown started", "10:12", UserCheck],
+  ["Escalated to Abdullah Khan", "Level 1, window expired", "10:12", Repeat2],
+  ["Acknowledged by Abdullah Khan", "First response 0:28", "10:13", CircleCheck],
+  ["Visit booked", "Tomorrow 12:00, customer invited", "10:20", CalendarCheck],
+  ["Payment received", "Rs 25,000, confirmed by Stripe", "10:41", CreditCard],
 ];
+
+function Wordmark({ size = 28, className }: { size?: number; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-2", className)}>
+      <RelayMark size={size} />
+      <span className="text-[19px] leading-none font-semibold tracking-[-0.02em] lowercase">relay</span>
+    </span>
+  );
+}
 
 export function HomePage() {
   useReveal();
@@ -173,10 +272,11 @@ export function HomePage() {
     <div className="home bg-canvas text-text">
       <header className="sticky top-0 z-30 border-b border-border/70 bg-canvas/80 backdrop-blur-md">
         <div className="mx-auto flex h-14 w-full max-w-[1120px] items-center justify-between px-5 sm:px-8">
-          <Link href="/" aria-label="Relay home"><Lockup size={26} textClassName="text-[18px]" /></Link>
+          <Link href="/" aria-label="Relay home"><Wordmark size={26} /></Link>
           <nav aria-label="Main" className="hidden items-center gap-7 text-[14px] text-text-muted md:flex">
             <a href="#how" className="hover:text-text">How it works</a>
             <a href="#features" className="hover:text-text">Features</a>
+            <a href="#tour" className="hover:text-text">Product</a>
             <a href="#record" className="hover:text-text">One record</a>
           </nav>
           <div className="flex items-center gap-2">
@@ -195,10 +295,7 @@ export function HomePage() {
       <main>
         <div className="mx-auto grid w-full max-w-[1120px] items-center gap-14 px-5 pt-16 pb-12 sm:px-8 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:pb-24">
           <div>
-            <p data-reveal className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-[12px] text-text-muted">
-              <span className="pulse size-1.5 rounded-full bg-[var(--logo-b)]" aria-hidden /> Built for service teams of 5 to 30
-            </p>
-            <h1 data-reveal style={{ "--d": "0.06s" } as React.CSSProperties} className="mt-6 text-[clamp(40px,7vw,76px)] leading-[1.02] font-semibold tracking-[-0.04em]">
+            <h1 data-reveal style={{ "--d": "0.06s" } as React.CSSProperties} className="text-[clamp(40px,7vw,76px)] leading-[1.02] font-semibold tracking-[-0.04em]">
               Every lead has
               <br />
               exactly one owner.
@@ -261,15 +358,19 @@ export function HomePage() {
           </ul>
         </Section>
 
+        <Section id="tour" eyebrow="See it" title="The screens your team will live in" className="pt-4 sm:pt-8">
+          <ProductTour />
+        </Section>
+
         <Section id="record" eyebrow="One customer record" title="Every step lands on the same timeline">
           <div className="grid items-start gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <p data-reveal className="max-w-[40ch] text-[16px] leading-relaxed text-text-muted">
               The email, who owned it and when, the escalation, the visit and the payment all sit on one contact page. When someone asks what happened, the answer is one scroll away.
             </p>
             <ol className="rounded-2xl border border-border bg-surface p-2 sm:p-3">
-              {TIMELINE.map(([t, d, time], i) => (
+              {TIMELINE.map(([t, d, time, Icon], i) => (
                 <li key={t} data-reveal style={{ "--d": `${i * 0.06}s` } as React.CSSProperties} className="flex items-start gap-4 rounded-xl px-3 py-3 hover:bg-surface-hover">
-                  <span className="mt-1.5 size-2 shrink-0 rounded-full bg-text" aria-hidden />
+                  <Icon className="mt-0.5 size-4 shrink-0 text-text-muted" aria-hidden />
                   <span className="min-w-0 flex-1">
                     <span className="block text-[14px] font-medium">{t}</span>
                     <span className="block text-[13px] text-text-muted">{d}</span>
@@ -295,7 +396,7 @@ export function HomePage() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex w-full max-w-[1120px] flex-wrap items-center justify-between gap-4 px-5 py-8 text-[13px] text-text-muted sm:px-8">
-          <Lockup size={22} textClassName="text-[15px]" />
+          <Wordmark size={22} className="text-[15px]" />
           <p>Built for NASCON. Every lead, one owner.</p>
           <nav aria-label="Footer" className="flex gap-5">
             <Link href="/login" className="hover:text-text">Sign in</Link>

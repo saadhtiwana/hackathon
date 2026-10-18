@@ -36,7 +36,7 @@ export default function SignupPage() {
     try {
       await api.signup(values);
       await queryClient.invalidateQueries({ queryKey: ["me"] });
-      router.replace("/dashboard");
+      router.replace("/get-started");
     } catch (error) {
       if (isApiError(error) && error.fields) {
         for (const [key, message] of Object.entries(error.fields)) {

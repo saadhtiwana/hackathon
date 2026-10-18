@@ -6,6 +6,7 @@ import {
   GitBranch,
   Inbox,
   LayoutDashboard,
+  Rocket,
   ListFilter,
   LifeBuoy,
   Plug,
@@ -26,6 +27,7 @@ export type NavItem = {
 };
 
 export const primaryNav: NavItem[] = [
+  { href: "/get-started", label: "Get started", icon: Rocket },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Inbox, permission: "crm.view", count: true },
   { href: "/inbox", label: "Inbox", icon: MessageSquare, permission: "crm.view" },

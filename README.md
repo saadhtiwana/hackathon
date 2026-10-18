@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="frontend/public/logo.svg" alt="Relay" width="72" height="72" />
+  <img src="frontend/public/brand/relay-mark.png" alt="Relay" width="88" height="88" />
 </p>
 
 <h1 align="center">Relay</h1>

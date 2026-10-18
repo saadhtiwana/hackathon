@@ -13,6 +13,7 @@
     "migrate": "tsx src/core/db/migrate.ts",
     "generate": "drizzle-kit generate",
     "seed": "tsx src/core/db/seed.ts",
+    "connect:stripe": "tsx src/scripts/connect-stripe.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

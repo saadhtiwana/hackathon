@@ -8,6 +8,7 @@ import { decodeCursor, escapeLike, orderBy, page } from '../../core/http/list.js
 import { conflict } from '../../core/errors.js';
 import type { AuthContext } from '../../core/auth/context.js';
 import { validateCustom } from './custom.js';
+import { cancelAppointment } from '../appointments/service.js';
 import { assertActiveMember, diff } from './shared.js';
 
 export interface ContactFilters {
@@ -161,6 +162,10 @@ export async function setOptOut(a: AuthContext, id: string, optedOut: boolean, r
 
 // Deleting a contact removes its opportunities, leads and conversations. Money records are never destroyed silently.
 export async function deleteContact(a: AuthContext, id: string) {
+  // Appointments live on employees' real Google calendars: cancel them there first so no orphan events are left behind (Q4).
+  await getOr404(db, contacts, a.workspaceId, id, 'Contact');
+  const open = await db.select({ id: appointments.id }).from(appointments).where(and(eq(appointments.workspaceId, a.workspaceId), eq(appointments.contactId, id), eq(appointments.status, 'scheduled')));
+  for (const ap of open) await cancelAppointment(a, ap.id);
   await db.transaction(async (tx) => {
     const cur = await getOr404(tx, contacts, a.workspaceId, id, 'Contact');
     const [pay] = await tx.select({ n: sql<number>`count(*)::int` }).from(payments).where(and(eq(payments.workspaceId, a.workspaceId), eq(payments.contactId, id), inArray(payments.status, ['paid', 'refunded', 'partially_refunded'])));

@@ -50,7 +50,7 @@ export default function SignupPage() {
   return (
     <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">Create a workspace</h1>
+        <h1 className="text-[24px] font-semibold tracking-tight">Create a workspace</h1>
         <p className="mt-1 text-[13px] text-muted">The first account becomes the owner.</p>
       </div>
       <Field label="Company" htmlFor="workspaceName" error={form.formState.errors.workspaceName?.message}>
@@ -71,7 +71,7 @@ export default function SignupPage() {
       </Button>
       <p className="text-[13px] text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="text-ink underline">
+        <Link href="/login" className="font-medium text-accent-text hover:underline">
           Sign in
         </Link>
       </p>

@@ -37,16 +37,16 @@ export function CommandPalette({
       open={open}
       onOpenChange={onOpenChange}
       label="Jump to a page"
-      className="fixed top-[18%] left-1/2 z-50 w-[min(480px,calc(100vw-32px))] -translate-x-1/2 rounded-lg border border-line bg-surface shadow-float"
+      className="fixed top-[18%] left-1/2 z-50 w-[min(480px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-surface shadow-raised animate-pop-in"
     >
       <Command.Input
         value={query}
         onValueChange={setQuery}
         placeholder="Jump to a page"
-        className="h-11 w-full border-b border-line bg-transparent px-3 text-[14px] outline-none"
+        className="h-12 w-full border-b border-border bg-transparent px-4 text-[14px] outline-none"
       />
-      <Command.List className="max-h-72 overflow-auto p-1">
-        <Command.Empty className="px-3 py-4 text-[13px] text-muted">No pages match.</Command.Empty>
+      <Command.List className="max-h-72 overflow-auto p-1.5">
+        <Command.Empty className="px-3 py-4 text-[13px] text-text-muted">No pages match.</Command.Empty>
         {items.map((item) => (
           <Command.Item
             key={item.href}
@@ -56,7 +56,7 @@ export function CommandPalette({
               onOpenChange(false);
               setQuery("");
             }}
-            className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-wash"
+            className="flex h-9 cursor-pointer items-center rounded-md px-2.5 text-[13px] data-[selected=true]:bg-surface-hover"
           >
             {item.label}
           </Command.Item>

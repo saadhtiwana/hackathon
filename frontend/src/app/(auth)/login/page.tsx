@@ -51,7 +51,7 @@ export default function LoginPage() {
   return (
     <form className="flex flex-col gap-4" onSubmit={form.handleSubmit(onSubmit)} noValidate>
       <div>
-        <h1 className="text-[22px] font-semibold tracking-tight">Welcome back</h1>
+        <h1 className="text-[24px] font-semibold tracking-tight">Welcome back</h1>
         <p className="mt-1 text-[13px] text-muted">Use the workspace account you were invited to.</p>
       </div>
       <Field label="Email" htmlFor="email" error={form.formState.errors.email?.message}>
@@ -66,7 +66,7 @@ export default function LoginPage() {
       </Button>
       <p className="text-[13px] text-muted">
         New company?{" "}
-        <Link href="/signup" className="text-ink underline">
+        <Link href="/signup" className="font-medium text-accent-text hover:underline">
           Create a workspace
         </Link>
       </p>

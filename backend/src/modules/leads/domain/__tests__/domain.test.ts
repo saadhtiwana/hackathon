@@ -160,6 +160,11 @@ describe('recoveryReasons', () => {
     expect(recoveryReasons(lead({ state: 'closed' }), rules, at(9999))).toEqual([]);
   });
 
+  it('flags a stuck lead with no owner', () => {
+    const r = recoveryReasons(lead({ state: 'unassigned', ownerId: null }), rules, at(10));
+    expect(r).toEqual([{ code: 'unacked_overdue', text: 'No eligible owner, needs a manager to assign' }]);
+  });
+
   it('combines reasons', () => {
     const r = recoveryReasons(lead({ escalationCount: 2 }), rules, at(100));
     expect(r.map((x) => x.code)).toEqual(['unacked_overdue', 'escalated_multiple', 'idle']);

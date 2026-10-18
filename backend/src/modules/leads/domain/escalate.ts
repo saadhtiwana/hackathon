@@ -72,14 +72,14 @@ export function shouldFire(lead: Lead, timerVersion: number, now: Date): boolean
   );
 }
 
-export function applyAssignment(
-  lead: Lead,
+export function applyAssignment<L extends Lead>(
+  lead: L,
   targetUserId: string,
   level: number,
   deadline: Date,
   reason: AssignmentReason,
   now: Date,
-): Lead {
+): L {
   const history = lead.ownerId ? [...lead.ownerHistory, lead.ownerId] : lead.ownerHistory;
   return {
     ...lead,
@@ -92,6 +92,23 @@ export function applyAssignment(
     escalationLevel: level,
     escalationCount: reason === 'ack_expired' ? lead.escalationCount + 1 : lead.escalationCount,
     ownerHistory: history,
+    ownerAway: false,
+  };
+}
+
+// End of the chain: nobody left to take the lead, so it loses its owner and waits in the recovery queue.
+export function applyStuck<L extends Lead>(lead: L, level: number): L {
+  const history = lead.ownerId ? [...lead.ownerHistory, lead.ownerId] : lead.ownerHistory;
+  return { ...lead, state: 'unassigned', ownerId: null, version: lead.version + 1, escalationLevel: level, ownerHistory: history };
+}
+
+export function applyAcknowledge<L extends Lead>(lead: L, now: Date): L {
+  return {
+    ...lead,
+    state: 'acknowledged',
+    version: lead.version + 1,
+    firstAcknowledgedAt: lead.firstAcknowledgedAt ?? now,
+    lastActionAt: now,
     ownerAway: false,
   };
 }

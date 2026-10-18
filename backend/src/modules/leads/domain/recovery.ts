@@ -6,7 +6,10 @@ export function recoveryReasons(lead: Lead, rules: Pick<AssignmentRules, 'idleSe
   if (lead.state === 'closed') return [];
   const out: RecoveryReason[] = [];
 
-  if (lead.state === 'assigned' && lead.ackDeadline && lead.ackDeadline.getTime() <= now.getTime()) {
+  // unassigned outside intake means nobody could take it: stuck at the end of the chain or nobody Available
+  if (lead.state === 'unassigned') {
+    out.push({ code: 'unacked_overdue', text: 'No eligible owner, needs a manager to assign' });
+  } else if (lead.state === 'assigned' && lead.ackDeadline && lead.ackDeadline.getTime() <= now.getTime()) {
     const over = Math.floor((now.getTime() - lead.ackDeadline.getTime()) / 1000);
     out.push({ code: 'unacked_overdue', text: `Not acknowledged, ${over}s past the window` });
   }

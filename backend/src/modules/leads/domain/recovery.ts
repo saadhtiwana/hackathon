@@ -1,4 +1,4 @@
-import type { AssignmentRules, Lead, RecoveryReason } from './types';
+import type { AssignmentRules, Lead, RecoveryReason } from './types.js';
 
 export const ESCALATED_MULTIPLE_THRESHOLD = 2;
 

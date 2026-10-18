@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { onAvailabilityChange } from '../availability';
-import { pickAssignee } from '../assign';
-import { isEligible } from '../eligibility';
-import { applyAssignment, nextStep, shouldFire } from '../escalate';
-import { isEscalation, timeToFirstResponse } from '../metrics';
-import { recoveryReasons } from '../recovery';
-import type { EscalationLevel } from '../types';
-import { at, cand, lead, T0 } from './helpers';
+import { onAvailabilityChange } from '../availability.js';
+import { pickAssignee } from '../assign.js';
+import { isEligible } from '../eligibility.js';
+import { applyAssignment, nextStep, shouldFire } from '../escalate.js';
+import { isEscalation, timeToFirstResponse } from '../metrics.js';
+import { recoveryReasons } from '../recovery.js';
+import type { EscalationLevel } from '../types.js';
+import { at, cand, lead, T0 } from './helpers.js';
 
 const rules = { maxOpenLeads: 3, ackWindowSeconds: 30, idleSeconds: 60 };
 

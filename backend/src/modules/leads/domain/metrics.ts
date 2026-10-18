@@ -1,4 +1,4 @@
-import type { AssignmentReason, Lead } from './types';
+import type { AssignmentReason, Lead } from './types.js';
 
 // Seconds from first assignment to first acknowledgement; null until acknowledged.
 export function timeToFirstResponse(lead: Pick<Lead, 'firstAssignedAt' | 'firstAcknowledgedAt'>): number | null {

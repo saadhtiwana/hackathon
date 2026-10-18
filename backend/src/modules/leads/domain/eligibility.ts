@@ -1,4 +1,4 @@
-import type { AssignmentRules, EligibilityResult, Member } from './types';
+import type { AssignmentRules, EligibilityResult, Member } from './types.js';
 
 export function isEligible(
   member: Member,

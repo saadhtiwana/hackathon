@@ -1,5 +1,5 @@
-import { isEligible } from './eligibility';
-import type { AssignResult, AssignmentRules, Candidate, SkippedCandidate } from './types';
+import { isEligible } from './eligibility.js';
+import type { AssignResult, AssignmentRules, Candidate, SkippedCandidate } from './types.js';
 
 // rrCursor is the userId that received the previous lead; order is by userId so it survives roster changes.
 export function pickAssignee(

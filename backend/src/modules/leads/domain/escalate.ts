@@ -1,4 +1,4 @@
-import { isEligible } from './eligibility';
+import { isEligible } from './eligibility.js';
 import type {
   AssignmentReason,
   AssignmentRules,
@@ -7,7 +7,7 @@ import type {
   EscalationLevel,
   EscalationStep,
   Lead,
-} from './types';
+} from './types.js';
 
 export function deadlineFrom(now: Date, seconds: number): Date {
   return new Date(now.getTime() + seconds * 1000);

@@ -1,4 +1,4 @@
-import type { Candidate, Lead, MemberStatus } from '../types';
+import type { Candidate, Lead, MemberStatus } from '../types.js';
 
 export const T0 = new Date('2026-01-01T00:00:00Z');
 export const at = (s: number) => new Date(T0.getTime() + s * 1000);

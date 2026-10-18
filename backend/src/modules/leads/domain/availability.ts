@@ -1,4 +1,4 @@
-import type { AssignmentRules, AvailabilityAction, Lead, MemberStatus, Member } from './types';
+import type { AssignmentRules, AvailabilityAction, Lead, MemberStatus, Member } from './types.js';
 
 const AWAY: MemberStatus[] = ['on_leave', 'offline'];
 

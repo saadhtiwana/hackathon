@@ -21,10 +21,10 @@ const patch = z
   .strict();
 
 export const workspaceRouter = Router();
-workspaceRouter.use(requireAuth);
 
 workspaceRouter.get(
   '/workspace',
+  requireAuth,
   asyncHandler(async (req, res) => {
     const w = await getWorkspace(db, req.auth!.workspaceId);
     res.json({ workspace: { id: w.id, name: w.name, slug: w.slug, timezone: w.timezone, defaultCurrency: w.defaultCurrency } });

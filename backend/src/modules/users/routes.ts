@@ -9,7 +9,6 @@ const status = z.enum(['available', 'busy', 'on_leave', 'offline']);
 const uuid = z.string().uuid();
 
 export const usersRouter = Router();
-usersRouter.use(requireAuth);
 
 usersRouter.get('/users', requireAnyPermission('users.manage', 'leads.reassign'), asyncHandler(async (req, res) => {
   res.json({ items: await listMembers(req.auth!.workspaceId) });
@@ -35,16 +34,16 @@ usersRouter.patch('/users/:id', requirePermission('users.manage'), asyncHandler(
   res.json({ items: await listMembers(req.auth!.workspaceId) });
 }));
 
-usersRouter.put('/me/availability', asyncHandler(async (req, res) => {
+usersRouter.put('/me/availability', requireAuth, asyncHandler(async (req, res) => {
   const { status: s } = z.object({ status }).strict().parse(req.body);
   res.json(await setAvailability(req.auth!, req.auth!.userId, s));
 }));
 
-usersRouter.put('/users/:id/availability', asyncHandler(async (req, res) => {
+usersRouter.put('/users/:id/availability', requireAuth, asyncHandler(async (req, res) => {
   const { status: s } = z.object({ status }).strict().parse(req.body);
   res.json(await setAvailability(req.auth!, uuid.parse(req.params.id), s));
 }));
 
-usersRouter.get('/availability', asyncHandler(async (req, res) => {
+usersRouter.get('/availability', requireAuth, asyncHandler(async (req, res) => {
   res.json({ items: await availabilityBoard(req.auth!.workspaceId) });
 }));

@@ -20,8 +20,8 @@ Every item below was checked on the live app. "works" means exercised on the liv
 
 ## 1. Roles, permissions, security
 
-- **1a works.** Sign in as the Owner, open Settings, Team and roles. Invite someone (an email goes out and the link also shows on screen), change a member's role, open a custom role and tick or untick permissions. Each change is in Settings, Audit log.
-- **1b works.** Sign in as the User (ahmadmustafabutt.dev@gmail.com): Pipeline, Contacts, opportunity pages, Dashboard and the CSV export show no values. The API agrees: `GET /api/opportunities` has no valueCents for this login.
+- **1a works.** Sign in as the Owner, Settings, Team and roles. Invite someone (an email goes out; pending invites have Resend and Revoke, and the link is copied as a fallback), change a member's role, open a custom role and tick or untick permissions. Every change appears in Settings, Audit log.
+- **1b works.** Sign in as the User (ahmadmustafabutt.dev@gmail.com, role User): Pipeline, Contacts, opportunity pages, Dashboard and the CSV export (403) show no values, and `GET /api/opportunities` has no valueCents. Audit log and settings return 403 and the dashboard shows personal figures.
 - **1c works.** As the User, `DELETE /api/contacts/<id>` returns 403. Using a Kohsar Solar contact id while signed in to Margalla returns 404.
 
 ## 2. Customizable CRM
@@ -29,7 +29,7 @@ Every item below was checked on the live app. "works" means exercised on the liv
 - **2a works.** Settings, Fields: add text, number, date, dropdown and checkbox fields; they appear on the contact and opportunity forms.
 - **2b works.** Settings, Pipelines: Residential Sales and Rentals have different fields; stages can be added, renamed, reordered and deleted (deleting a stage with opportunities asks for a destination stage).
 - **2c works.** Move an opportunity into "Booking" in Residential Sales: the move is refused (422) naming the missing fields until they are filled.
-- **2d partial.** Saved lists work in the API (`POST /api/saved-lists` with 3 or more criteria, `GET /api/saved-lists/<id>/results` re-evaluates live), but there is no screen for them yet. Each contact page shows its full timeline.
+- **2d works.** Saved lists: sidebar, Saved lists. Pick Contacts or Opportunities, add 3 or more filters (owner, tag, company, created date, custom fields), see the live count, press Save as list. Opening a list shows the matching records and refreshes by itself (every 15 s and on live events); Rename and Delete are on the list page. Each contact page shows its full timeline.
 
 ## 3. Lead assignment and escalation
 
@@ -45,7 +45,7 @@ Every item below was checked on the live app. "works" means exercised on the liv
 
 ## 5. Messaging (Gmail)
 
-- **5 partial.** Real email arrives (poll every 30 s), replies leave in the same thread with status queued, sent or failed and a Retry button; the same Gmail message id never creates two messages. Gmail has no inbound webhook, so this channel is polled; a signed inbound webhook endpoint for it is not built.
+- **5 works.** Real email arrives (polled every 30 s), replies leave in the same thread with status queued, sent or failed and a Retry button; the same Gmail message id never creates two messages. Gmail has no inbound webhook, so the channel is polled; a signed inbound webhook also exists: `POST /webhooks/email/<workspace id>` (HMAC-SHA256, timestamp within 5 minutes). Run `npm run test:email-webhook` in `backend`: valid request 200, same id again "duplicate", forged signature 401 and stale timestamp 401 (both recorded as rejected in Integrations, sync history).
 
 ## 6. Payments (Stripe test mode)
 
@@ -53,14 +53,14 @@ Every item below was checked on the live app. "works" means exercised on the liv
 
 ## 7. Calendar (Google)
 
-- **7 partial.** Google sign-in, real calendar events, clash detection (409 with Book anyway), reschedule and cancel all work, with an invite sent to the customer. A revoked Google grant is detected in code and shown as "Needs reconnect", but revoking was not exercised on the live site.
+- **7 partial.** Google sign-in, real calendar events, clash detection (409 with Book anyway), reschedule and cancel all work, with an invite sent to the customer. A revoked Google grant is detected in code and shown as "Needs reconnect" (booking that person is blocked with the reason), but revoking at myaccount.google.com/permissions was not exercised on the live site.
 
 ## 8. Notifications
 
-- **8 works.** An escalation sends a real HTML email with an Open lead button. The link survives sign-in: you land on the lead after logging in. The in-app bell is not wired to alerts.
-- **8b partial.** Secrets are stored encrypted and never returned to the browser (only a masked last four). A bad Stripe key only affects the Stripe card (provider calls are isolated), but this was not exercised on the live site.
+- **8 works.** An escalation sends a real HTML email with an Open lead button, and the link survives sign-in (you land on the lead after logging in). The header bell lists your notifications (assigned to you, escalated to you, customer replied, payment paid/failed/expired, appointment booked), shows an unread badge, updates live, opens the record on click and has Mark all read.
+- **8b works.** Secrets are stored encrypted and never returned to the browser (only a masked last four). Isolation was tested on a throwaway workspace with an invalid Stripe key: only the Stripe card showed an error ("The provider rejected the credentials") while contacts, pipelines, opportunities, dashboard, conversations and payments all kept returning 200, and Margalla Estates was unaffected. The empty throwaway workspace remains because audit history cannot be deleted.
 
 ## 9. Quality
 
-- **9a partial.** Screens are built mobile first with a drawer menu and keyboard focus styles; a full 360 px sweep was not completed.
+- **9a works.** A 360 px sweep of login, dashboard, leads, lead detail, inbox, pipeline, contacts, contact detail, appointments, payments, saved lists, team, integrations, audit and the 404 page found no horizontal scroll once the integrations cards were fixed. Drawer navigation and visible keyboard focus come from the shared design system; a full keyboard walkthrough of every dialog was not repeated.
 - **9b works.** Actions show loading, success toasts and plain error messages.

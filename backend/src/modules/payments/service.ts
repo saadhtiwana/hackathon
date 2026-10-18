@@ -1,7 +1,7 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import type Stripe from 'stripe';
 import { db } from '../../core/db/client.js';
-import { contacts, opportunities, payments, users, workspaces } from '../../core/db/schema/index.js';
+import { contacts, conversations, leads, messages, opportunities, payments, pipelines, stages, users, workspaces } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { activity } from '../../core/activity/index.js';
 import { getOr404 } from '../../core/db/scoped.js';
@@ -16,6 +16,7 @@ import { markError, markOk, loadConfig } from '../integrations/service.js';
 import { stripeAdapter } from '../integrations/stripe/adapter.js';
 import { stripeFor, toProviderError } from '../integrations/stripe/client.js';
 import { sendToContact } from '../conversations/service.js';
+import { createOpportunity } from '../crm/opportunities.js';
 
 type Payment = typeof payments.$inferSelect;
 type Status = Payment['status'];
@@ -216,4 +217,49 @@ export async function publicPayment(id: string) {
     .where(eq(payments.id, id));
   if (!r) return null;
   return { reference: r.id.slice(0, 8).toUpperCase(), status: r.status, amountCents: r.amountCents, currency: r.currency, workspaceName: r.workspaceName, checkoutUrl: r.status === 'requested' ? r.url : null };
+}
+
+// "Request payment" from a lead or contact page: finds or creates the opportunity, creates the Checkout session and emails the link.
+export async function requestPaymentForContact(a: AuthContext, contactId: string, i: { amountCents: number; currency?: string; send?: boolean }) {
+  const ws = a.workspaceId;
+  const contact = await getOr404(db, contacts, ws, contactId, 'Contact');
+  const [open] = await db
+    .select({ id: opportunities.id })
+    .from(opportunities)
+    .innerJoin(stages, eq(stages.id, opportunities.stageId))
+    .where(and(eq(opportunities.workspaceId, ws), eq(opportunities.contactId, contactId), eq(stages.isWon, false), eq(stages.isLost, false)))
+    .orderBy(desc(opportunities.createdAt))
+    .limit(1);
+  let opportunityId = open?.id;
+  let created = false;
+  if (!opportunityId) {
+    const [first] = await db
+      .select({ body: messages.body })
+      .from(messages)
+      .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+      .where(and(eq(conversations.workspaceId, ws), eq(conversations.contactId, contactId), eq(messages.direction, 'in')))
+      .orderBy(asc(messages.createdAt))
+      .limit(1);
+    const subject = first ? (first.body.split('\n\n')[0] ?? '').split('\n')[0]!.slice(0, 60) : '';
+    const [pipe] = await db.select().from(pipelines).where(eq(pipelines.workspaceId, ws)).orderBy(desc(pipelines.isDefault), asc(pipelines.createdAt)).limit(1);
+    const [lead] = await db.select({ ownerId: leads.ownerId }).from(leads).where(and(eq(leads.workspaceId, ws), eq(leads.contactId, contactId), inArray(leads.status, ['assigned', 'acknowledged']))).orderBy(desc(leads.createdAt)).limit(1);
+    const opp = await createOpportunity(a, { pipelineId: pipe!.id, contactId, name: `${contact.name} — ${subject || 'Booking'}`, ownerId: lead?.ownerId ?? contact.ownerId ?? a.userId });
+    opportunityId = opp.id;
+    created = true;
+  }
+  const payment = await createPaymentRequest(a, opportunityId, { amountCents: i.amountCents, currency: i.currency });
+  let emailed = false;
+  let emailNote: string | null = null;
+  if (i.send !== false) {
+    if (!contact.email) emailNote = 'The contact has no email address, so the link was not emailed. Copy it instead.';
+    else {
+      try {
+        await sendPaymentLink(a, payment.id);
+        emailed = true;
+      } catch (e) {
+        emailNote = e instanceof Error ? e.message : 'The email could not be sent. Copy the link instead.';
+      }
+    }
+  }
+  return { payment, opportunityId, opportunityCreated: created, emailed, emailNote, emailedTo: emailed ? contact.email : null };
 }

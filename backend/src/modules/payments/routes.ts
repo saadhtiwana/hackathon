@@ -54,3 +54,9 @@ paymentsRouter.post('/payments/:id/expire', requirePermission('crm.edit'), async
 paymentsRouter.post('/payments/:id/send', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
   res.status(201).json(await svc.sendPaymentLink(req.auth!, uuid.parse(req.params.id)));
 }));
+
+paymentsRouter.post('/contacts/:id/request-payment', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
+  const b = z.object({ amount: z.number().positive().max(1_000_000_000).optional(), amountCents: z.number().int().positive().max(100_000_000_000).optional(), currency: z.string().length(3).optional(), send: z.boolean().optional() }).strict().parse(req.body);
+  const amountCents = b.amountCents ?? Math.round((b.amount ?? 25000) * 100);
+  res.status(201).json(await svc.requestPaymentForContact(req.auth!, uuid.parse(req.params.id), { amountCents, currency: b.currency ?? 'PKR', send: b.send }));
+}));

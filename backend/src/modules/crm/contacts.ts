@@ -1,6 +1,6 @@
 import { and, desc, eq, gte, ilike, inArray, lte, or, sql } from 'drizzle-orm';
 import { db } from '../../core/db/client.js';
-import { activities, appointments, companies, contactTags, contacts, conversations, opportunities, payments, stages, tags, users } from '../../core/db/schema/index.js';
+import { activities, appointments, leads, messages, companies, contactTags, contacts, conversations, opportunities, payments, stages, tags, users } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { activity } from '../../core/activity/index.js';
 import { getOr404, inWorkspace, updateVersioned } from '../../core/db/scoped.js';
@@ -9,6 +9,7 @@ import { conflict } from '../../core/errors.js';
 import type { AuthContext } from '../../core/auth/context.js';
 import { validateCustom } from './custom.js';
 import { cancelAppointment } from '../appointments/service.js';
+import { describe, nameMap } from '../../core/activity/describe.js';
 import { assertActiveMember, diff } from './shared.js';
 
 export interface ContactFilters {
@@ -98,7 +99,22 @@ export async function getContact(ws: string, id: string) {
       .orderBy(desc(activities.createdAt))
       .limit(50),
   ]);
-  return { contact, company: company ?? null, owner: owner ?? null, tags: tagRows, opportunities: opps, conversations: convos, payments: pays, appointments: appts, activities: acts };
+  // The owner follows the open lead when the contact itself has none.
+  let ownerOut = owner ?? null;
+  if (!ownerOut) {
+    const [lo] = await db.select({ id: users.id, name: users.name, email: users.email }).from(leads).innerJoin(users, eq(users.id, leads.ownerId)).where(and(eq(leads.workspaceId, ws), eq(leads.contactId, id), inArray(leads.status, ['assigned', 'acknowledged']))).orderBy(desc(leads.createdAt)).limit(1);
+    ownerOut = lo ?? null;
+  }
+  const names = await nameMap(acts);
+  const convoOut = await Promise.all(
+    convos.map(async (c) => {
+      const [last] = await db.select({ body: messages.body, direction: messages.direction, status: messages.status, at: messages.createdAt }).from(messages).where(eq(messages.conversationId, c.id)).orderBy(desc(messages.createdAt)).limit(1);
+      const [first] = await db.select({ body: messages.body }).from(messages).where(and(eq(messages.conversationId, c.id), eq(messages.direction, 'in'))).orderBy(messages.createdAt).limit(1);
+      const subject = first?.body.includes('\n\n') ? first.body.split('\n\n')[0]! : null;
+      return { ...c, subject, lastMessage: last ? { body: last.body.slice(0, 120), direction: last.direction, status: last.status } : null };
+    }),
+  );
+  return { contact, company: company ?? null, owner: ownerOut, tags: tagRows, opportunities: opps, conversations: convoOut, payments: pays, appointments: appts, activities: acts.map((a) => ({ ...a, summary: describe(a, names) })) };
 }
 
 interface ContactInput {

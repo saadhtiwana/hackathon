@@ -5,6 +5,7 @@ import { db } from '../../core/db/client.js';
 import { activities, contacts, conversations, leads, messages, users } from '../../core/db/schema/index.js';
 import { asyncHandler, notFound, unprocessable } from '../../core/errors.js';
 import { decodeCursor, page } from '../../core/http/list.js';
+import { describe, nameMap } from '../../core/activity/describe.js';
 import { maskValues, requirePermission } from '../../core/rbac/index.js';
 
 const uuid = z.string().uuid();
@@ -25,7 +26,8 @@ activitiesRouter.get('/activities', requirePermission('crm.view'), asyncHandler(
     .limit(q.limit + 1)
     .offset(offset);
   const p = page(rows, q.limit, offset, rows.length);
-  res.json(maskValues({ items: p.items.map(({ actorName, ...r }) => ({ ...r, actor: r.actorId ? { id: r.actorId, name: actorName } : null })), nextCursor: p.nextCursor }, req.auth!.permissions.has('crm.view_values')));
+  const names = await nameMap(p.items);
+  res.json(maskValues({ items: p.items.map(({ actorName, ...r }) => ({ ...r, summary: describe({ ...r, actorName }, names), actor: r.actorId ? { id: r.actorId, name: actorName } : null })), nextCursor: p.nextCursor }, req.auth!.permissions.has('crm.view_values')));
 }));
 
 // The enquiry that started a lead: first inbound message (email) or the note left at intake.

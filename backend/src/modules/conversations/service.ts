@@ -47,7 +47,7 @@ export async function storeInbound(tx: Tx, ws: string, contact: ContactRow, chan
   const [m] = await tx.insert(messages).values({ workspaceId: ws, conversationId: convo.id, providerSid: messageId, direction: 'in', body, status: 'received', createdAt: at ?? new Date() }).onConflictDoNothing().returning({ id: messages.id });
   if (!m) return null;
   await tx.update(conversations).set({ lastMessageAt: at ?? new Date() }).where(eq(conversations.id, convo.id));
-  await activity.record(tx, { workspaceId: ws, entity: { contactId: contact.id }, type: 'message', actorId: null, data: { conversationId: convo.id, messageId: m.id, direction: 'in', channel } });
+  await activity.record(tx, { workspaceId: ws, entity: { contactId: contact.id }, type: 'message', actorId: null, data: { conversationId: convo.id, messageId: m.id, direction: 'in', channel, preview: body.replace(/\s+/g, ' ').slice(0, 80) } });
   return { conversationId: convo.id, messageId: m.id };
 }
 

@@ -44,7 +44,7 @@ async function handleInbound(ws: string, mailbox: string, m: ParsedEmail): Promi
         await tx.update(contacts).set({ optedOut: true, optOutReason: 'Replied STOP by email', version: sql`${contacts.version} + 1` }).where(eq(contacts.id, contact!.id));
         await audit.record(tx, { workspaceId: ws, actorId: null, action: 'contact.opt_out_changed', targetType: 'contact', targetId: contact!.id, before: { optedOut: false }, after: { optedOut: true, reason: 'Replied STOP by email' } });
       }
-      if (created && !stop) await leadHooks.createLead(tx, { workspaceId: ws, contactId: contact!.id, source: 'email', message: body, actorId: null, dedupeOpen: true });
+      if (created && !stop) await leadHooks.createLead(tx, { workspaceId: ws, contactId: contact!.id, source: 'email', actorId: null, dedupeOpen: true });
       return stored;
     });
     if (out) realtime.publish(ws, { type: 'message.received', ids: { conversationId: out.conversationId, messageId: out.messageId } });

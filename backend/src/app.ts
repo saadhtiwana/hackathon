@@ -11,6 +11,8 @@ import { workspaceRouter } from './modules/workspace/routes.js';
 import { usersRouter } from './modules/users/routes.js';
 import { rolesRouter } from './modules/roles/routes.js';
 import { crmRouter } from './modules/crm/routes.js';
+import { leadsRouter } from './modules/leads/index.js';
+import { internalRouter } from './core/scheduler/index.js';
 
 export function createApp() {
   const app = express();
@@ -32,6 +34,7 @@ export function createApp() {
 
   // /internal/*, /webhooks/* are mounted by their owners and authenticate by key or provider signature.
   app.use('/realtime', realtimeStreamRouter);
+  app.use('/internal', internalRouter);
 
   const api = express.Router();
   api.use(originCheck);
@@ -42,6 +45,7 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(leadsRouter);
   app.use('/api', api);
 
   app.use((_req, _res, next) => next(new AppError(404, 'not_found', 'Route not found')));

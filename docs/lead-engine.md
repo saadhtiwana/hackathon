@@ -119,6 +119,14 @@ Routes as in `docs/api.md`, mounted inside the `/api` router (`api.use(leadsRout
 - Public form: zod-validated; phone normalised with the CRM helper (local numbers default to +92); contact matched by phone, then email, inside the workspace, else created. The `website` honeypot, unknown slugs and real submissions all get `201 {ok:true}`, so the response reveals nothing. Rate limit 5 per minute per IP and slug, in memory (per instance).
 - Rules: windows 10 s to 7 days, up to 10 levels; `backup`/`manager` levels must name an active member.
 
-## 10. Scheduler contract
+## 10. Scheduler
 
-`/internal/tick` (every minute) calls `leadHooks.sweep(new Date())`. For second-level precision at demo scale, the scheduler can also call `nextDueAt()` after each tick and after any `lead.assigned`/`lead.escalated`/`lead.reassigned` event, and `setTimeout` a sweep for that moment. Both paths are safe to overlap (section 6). Leads that came due while the server was down are processed on the first sweep after start.
+`core/scheduler`, started from `src/index.ts` after the server listens:
+
+- Boot: one sweep and one outbox drain, so leads that came due while the server was down escalate immediately (audited as late).
+- One `setTimeout` armed at `min(nextDueAt(), now + 30 s)`, re-armed after every committed lead change (the lead service calls `scheduler.rearm()`), so 30-second windows fire on time.
+- Safety intervals: sweep every 30 s, outbox drain every 5 s, so escalation alerts go out within the same minute.
+- Each job has an overlap guard in-process; across processes `SKIP LOCKED` keeps sweep and drain single (section 6).
+- `GET /internal/tick?key=TICK_KEY` (constant-time compare) runs a sweep and a drain and returns the counts, for an external cron.
+
+`core/outbox`: `enqueue(tx, {workspaceId, kind, payload, runAt?, maxAttempts?})` inside the state-change transaction, `registerHandler(kind, fn)`, `drain()`. Drain claims due jobs with `SKIP LOCKED` (only kinds that have a handler, so jobs wait for their handler instead of burning attempts), runs them outside the claim transaction, retries with exponential backoff (5 s doubling, capped at 10 min) and after `max_attempts` marks the job failed with a plain-language `last_error`. Jobs left running by a crashed process are reclaimed after 5 minutes. Handlers must be idempotent.

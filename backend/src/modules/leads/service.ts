@@ -33,6 +33,8 @@ export interface ServiceDeps {
   ports: Ports;
   now?: () => Date;
   log?: (msg: string, err: unknown) => void;
+  // called after a lead change is committed (or the hook returns), e.g. to re-arm the escalation timer
+  onChange?: () => void;
 }
 
 export interface Viewer {
@@ -81,6 +83,7 @@ export function createLeadService(deps: ServiceDeps) {
 
   function flush(fx: Fx[]) {
     for (const f of fx) ports.realtime.publish(f.workspaceId, f.event);
+    if (fx.length) deps.onChange?.();
   }
 
   // Own transaction: realtime events go out only after commit.

@@ -1,7 +1,8 @@
 // Core services the lead engine uses, gathered in one place so tests can swap them for fakes.
 import { audit, type AuditEvent } from '../../core/audit/index.js';
 import type { Tx } from '../../core/db/client.js';
-import { activities, outboxJobs } from '../../core/db/schema/index.js';
+import { activities } from '../../core/db/schema/index.js';
+import { outbox } from '../../core/outbox/index.js';
 import { realtime } from '../../core/realtime/index.js';
 
 export type { DbOrTx, Tx } from '../../core/db/client.js';
@@ -68,22 +69,7 @@ export const ports: Ports = {
     },
   },
 
-  // Temporary until core/outbox exists: same row shape, so the drain picks these up unchanged.
-  outbox: {
-    async enqueue(tx, job) {
-      const [row] = await tx
-        .insert(outboxJobs)
-        .values({
-          workspaceId: job.workspaceId,
-          kind: job.kind,
-          payload: job.payload,
-          runAt: job.runAt ?? new Date(),
-          maxAttempts: job.maxAttempts ?? 5,
-        })
-        .returning({ id: outboxJobs.id });
-      return row.id;
-    },
-  },
+  outbox,
 
   realtime,
 };

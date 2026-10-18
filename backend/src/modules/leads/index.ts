@@ -1,11 +1,12 @@
 // Public surface of the leads module. Other modules reach it only through core/lead-hooks (docs/modules.md).
 import { setLeadHooks } from '../../core/lead-hooks.js';
+import { scheduler } from '../../core/scheduler/index.js';
 import { ports } from './ports.js';
 import { pgLeadRepo } from './repo.js';
 import { leadsRouter as buildRouter, type RouterOptions } from './routes.js';
 import { createLeadService } from './service.js';
 
-export const leadService = createLeadService({ repo: pgLeadRepo, ports });
+export const leadService = createLeadService({ repo: pgLeadRepo, ports, onChange: () => scheduler.rearm() });
 
 export const leadHooks = {
   createLead: leadService.createLead,
@@ -20,13 +21,8 @@ export const leadHooks = {
   nextDueAt: leadService.nextDueAt,
 };
 
-// core types onAvailabilityChange as Promise<void>; the counts stay available on leadHooks above
-setLeadHooks({
-  ...leadHooks,
-  onAvailabilityChange: async (tx, i) => {
-    await leadService.onAvailabilityChange(tx, i);
-  },
-});
+setLeadHooks(leadHooks);
+scheduler.useLeads({ sweep: leadHooks.sweep, nextDueAt: leadHooks.nextDueAt });
 
 // Mount inside the /api router: api.use(leadsRouter)
 export const leadsRouter = buildRouter(leadService);

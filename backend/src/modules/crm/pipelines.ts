@@ -1,6 +1,6 @@
 import { and, asc, count, eq, ne, sql } from 'drizzle-orm';
 import { db, type Tx } from '../../core/db/client.js';
-import { customFields, opportunities, pipelines, stages } from '../../core/db/schema/index.js';
+import { customFields, opportunities, pipelines, stageRequiredFields, stages } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { getOr404 } from '../../core/db/scoped.js';
 import { badRequest, conflict } from '../../core/errors.js';
@@ -8,14 +8,18 @@ import type { AuthContext } from '../../core/auth/context.js';
 import { createPipelineWithStages } from '../workspace/service.js';
 
 export async function listPipelines(ws: string) {
-  const [ps, ss, fs] = await Promise.all([
+  const [ps, ss, fs, req] = await Promise.all([
     db.select().from(pipelines).where(eq(pipelines.workspaceId, ws)).orderBy(asc(pipelines.createdAt)),
     db.select().from(stages).where(eq(stages.workspaceId, ws)).orderBy(asc(stages.position)),
     db.select().from(customFields).where(and(eq(customFields.workspaceId, ws), eq(customFields.entity, 'opportunity'))).orderBy(asc(customFields.position)),
+    db.select().from(stageRequiredFields).where(eq(stageRequiredFields.workspaceId, ws)),
   ]);
   return ps.map((p) => ({
     ...p,
-    stages: ss.filter((s) => s.pipelineId === p.id),
+    stages: ss.filter((s) => s.pipelineId === p.id).map((s) => ({
+      ...s,
+      requiredFieldIds: req.filter((r) => r.stageId === s.id).map((r) => r.fieldId),
+    })),
     fields: fs.filter((f) => f.pipelineId === null || f.pipelineId === p.id),
   }));
 }

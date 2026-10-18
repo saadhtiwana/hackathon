@@ -15,8 +15,9 @@ const keys: Record<string, string[][]> = {
   "recovery.changed": [["leads"]],
   "message.received": [["conversations"]],
   "message.status": [["conversations"]],
-  "payment.updated": [["payments"]],
-  "appointment.updated": [["appointments"]],
+  "payment.updated": [["payments"], ["contacts"], ["opportunities"]],
+  "appointment.updated": [["appointments"], ["contacts"], ["opportunities"]],
+  "activity.created": [["contacts"], ["opportunities"], ["companies"], ["pipelines"]],
   "availability.changed": [["me"], ["availability"]],
 };
 

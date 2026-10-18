@@ -93,7 +93,7 @@ crmRouter.post('/companies', requirePermission('crm.create'), asyncHandler(async
   res.status(201).json({ company: await svc.createCompany(req.auth!, z.object(companyFields).strict().parse(req.body)) });
 }));
 crmRouter.get('/companies/:id', requirePermission('crm.view'), asyncHandler(async (req, res) => {
-  res.json(await svc.getCompany(req.auth!.workspaceId, id(req)));
+  res.json(maskValues(await svc.getCompany(req.auth!.workspaceId, id(req)), canValues(req)));
 }));
 crmRouter.patch('/companies/:id', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
   const { version: v, ...patch } = z.object({ version, ...companyFields, name: companyFields.name.optional() }).strict().parse(req.body);
@@ -177,4 +177,32 @@ crmRouter.delete('/stages/:id', requirePermission('settings.manage'), asyncHandl
   const q = z.object({ moveTo: uuid.optional() }).parse(req.query);
   await svc.deleteStage(req.auth!, id(req), q.moveTo);
   res.status(204).end();
+}));
+
+const fieldType = z.enum(['text', 'number', 'date', 'dropdown', 'checkbox']);
+const entity = z.enum(['contact', 'opportunity']);
+
+crmRouter.get('/custom-fields', requirePermission('crm.view'), asyncHandler(async (req, res) => {
+  const q = z.object({ entity, pipelineId: uuid.optional() }).parse(req.query);
+  res.json({ items: await svc.listFields(req.auth!.workspaceId, q.entity, q.pipelineId) });
+}));
+crmRouter.post('/custom-fields', requirePermission('settings.manage'), asyncHandler(async (req, res) => {
+  const b = z.object({ entity, pipelineId: uuid.nullable().optional(), name: z.string().trim().min(1).max(80), type: fieldType, options: z.array(z.string().trim().min(1).max(80)).max(30).optional() }).strict().parse(req.body);
+  res.status(201).json({ field: await svc.createField(req.auth!, b) });
+}));
+crmRouter.patch('/custom-fields/:id', requirePermission('settings.manage'), asyncHandler(async (req, res) => {
+  const b = z.object({ name: z.string().trim().min(1).max(80).optional(), options: z.array(z.string().trim().min(1).max(80)).max(30).optional() }).strict().parse(req.body);
+  res.json({ field: await svc.updateField(req.auth!, id(req), b) });
+}));
+crmRouter.delete('/custom-fields/:id', requirePermission('settings.manage'), asyncHandler(async (req, res) => {
+  await svc.deleteField(req.auth!, id(req));
+  res.status(204).end();
+}));
+crmRouter.put('/stages/:id/required-fields', requirePermission('settings.manage'), asyncHandler(async (req, res) => {
+  const b = z.object({ fieldIds: z.array(uuid).max(30) }).strict().parse(req.body);
+  res.json({ fieldIds: await svc.setRequiredFields(req.auth!, id(req), b.fieldIds) });
+}));
+crmRouter.post('/activities/notes', requirePermission('crm.edit'), asyncHandler(async (req, res) => {
+  const b = z.object({ contactId: uuid.optional(), opportunityId: uuid.optional(), leadId: uuid.optional(), body: z.string().trim().min(1).max(4000) }).strict().parse(req.body);
+  res.status(201).json({ activity: await svc.addNote(req.auth!, b) });
 }));

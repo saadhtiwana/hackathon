@@ -1,6 +1,6 @@
 import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { db } from '../../core/db/client.js';
-import { companies, contacts } from '../../core/db/schema/index.js';
+import { companies, contacts, opportunities, stages } from '../../core/db/schema/index.js';
 import { audit } from '../../core/audit/index.js';
 import { getOr404, inWorkspace, updateVersioned } from '../../core/db/scoped.js';
 import { decodeCursor, escapeLike, orderBy, page } from '../../core/http/list.js';
@@ -24,7 +24,21 @@ export async function listCompanies(ws: string, q: { limit: number; cursor?: str
 export async function getCompany(ws: string, id: string) {
   const company = await getOr404(db, companies, ws, id, 'Company');
   const people = await db.select({ id: contacts.id, name: contacts.name, phone: contacts.phone, email: contacts.email }).from(contacts).where(and(eq(contacts.workspaceId, ws), eq(contacts.companyId, id)));
-  return { company, contacts: people };
+  const opps = await db
+    .select({
+      id: opportunities.id,
+      name: opportunities.name,
+      contactId: opportunities.contactId,
+      contactName: contacts.name,
+      stageName: stages.name,
+      valueCents: opportunities.valueCents,
+      currency: opportunities.currency,
+    })
+    .from(opportunities)
+    .innerJoin(contacts, eq(contacts.id, opportunities.contactId))
+    .innerJoin(stages, eq(stages.id, opportunities.stageId))
+    .where(and(eq(opportunities.workspaceId, ws), eq(contacts.companyId, id)));
+  return { company, contacts: people, opportunities: opps };
 }
 
 export async function createCompany(a: AuthContext, i: { name: string; domain?: string | null; phone?: string | null; address?: string | null }) {

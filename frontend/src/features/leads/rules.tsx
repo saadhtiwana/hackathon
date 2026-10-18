@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { useMe } from "@/components/session";
+import { Avatar } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -80,7 +82,11 @@ function RulesForm({ initial }: { initial: AssignmentRules }) {
     onError: () => toast("Rules were not saved", "signal"),
   });
   const errors = fieldErrors(save.error) ?? {};
-  const memberOptions = (members.data?.items ?? []).map((m) => ({ value: m.userId, label: m.name }));
+  const memberOptions = (members.data?.items ?? []).map((m) => ({
+    value: m.userId,
+    label: m.name,
+    icon: <Avatar name={m.name} id={m.userId} size="xs" status={m.status} />,
+  }));
 
   function update(i: number, patch: Partial<LevelDraft>) {
     setLevels((ls) => ls.map((l, j) => (j === i ? { ...l, ...patch } : l)));
@@ -112,30 +118,30 @@ function RulesForm({ initial }: { initial: AssignmentRules }) {
 
   return (
     <form onSubmit={submit} className="flex max-w-2xl flex-col gap-8">
-      <section className="grid gap-4 sm:grid-cols-3" aria-label="Windows and limits">
+      <Card className="grid gap-4 p-5 sm:grid-cols-3" aria-label="Windows and limits">
         <Field label="Acknowledgement window (seconds)" hint="Use 30s for demos" htmlFor="ack" error={errors.ackWindowSeconds}>
-          <Input id="ack" type="number" inputMode="numeric" min={10} required value={ack} onChange={(e) => setAck(e.target.value)} className="font-mono tabular-nums" />
+          <Input id="ack" type="number" inputMode="numeric" min={10} required value={ack} onChange={(e) => setAck(e.target.value)} className="tabular-nums" />
         </Field>
         <Field label="Max open leads per person" htmlFor="max" error={errors.maxOpenLeads}>
-          <Input id="max" type="number" inputMode="numeric" min={1} required value={max} onChange={(e) => setMax(e.target.value)} className="font-mono tabular-nums" />
+          <Input id="max" type="number" inputMode="numeric" min={1} required value={max} onChange={(e) => setMax(e.target.value)} className="tabular-nums" />
         </Field>
         <Field label="Idle period (seconds)" hint="No recorded action for this long sends a lead to recovery" htmlFor="idle" error={errors.idleSeconds}>
-          <Input id="idle" type="number" inputMode="numeric" min={10} required value={idle} onChange={(e) => setIdle(e.target.value)} className="font-mono tabular-nums" />
+          <Input id="idle" type="number" inputMode="numeric" min={10} required value={idle} onChange={(e) => setIdle(e.target.value)} className="tabular-nums" />
         </Field>
-      </section>
+      </Card>
 
       <section aria-labelledby="levels-h">
-        <h2 id="levels-h" className="text-[14px] font-medium">
+        <h2 id="levels-h" className="text-[16px] font-semibold">
           Escalation chain
         </h2>
-        <p className="mt-1 mb-3 text-[13px] text-muted">
+        <p className="mt-1 mb-3 text-[13px] text-text-muted">
           When a window expires the lead moves down this list. Each level gets its own window. If nobody at any level can take it, it waits in
           the recovery queue.
         </p>
         <ol className="flex flex-col gap-2">
           {levels.map((l, i) => (
-            <li key={l.key} className="flex flex-wrap items-end gap-2 rounded-md border border-line bg-surface p-3">
-              <span className="w-full font-mono text-[12px] text-muted tabular-nums sm:w-auto sm:pb-2.5">Level {i + 1}</span>
+            <li key={l.key} className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface p-4 animate-row-in">
+              <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent-text tabular-nums sm:mb-1">{i + 1}</span>
               <Field label="Goes to" className="min-w-44 flex-1">
                 <Select label={`Level ${i + 1} goes to`} value={l.kind} onValueChange={(v) => update(i, { kind: v as EscalationKind })} options={kindOptions} />
               </Field>
@@ -159,7 +165,7 @@ function RulesForm({ initial }: { initial: AssignmentRules }) {
                   aria-label={`Level ${i + 1} seconds`}
                   value={l.seconds}
                   onChange={(e) => update(i, { seconds: e.target.value })}
-                  className="font-mono tabular-nums"
+                  className="tabular-nums"
                 />
               </Field>
               <span className="flex gap-1 pb-0.5">
@@ -189,11 +195,11 @@ function RulesForm({ initial }: { initial: AssignmentRules }) {
         ) : null}
       </section>
 
-      <section aria-labelledby="policy-h" className="rounded-md border border-line bg-wash p-3">
-        <h2 id="policy-h" className="text-[13px] font-medium">
+      <section aria-labelledby="policy-h" className="rounded-xl bg-tint-blue p-4 text-tint-blue-text">
+        <h2 id="policy-h" className="text-[14px] font-semibold">
           When someone goes on leave or offline
         </h2>
-        <ul className="mt-1 list-disc pl-5 text-[13px] text-muted">
+        <ul className="mt-1.5 list-disc pl-5 text-[13px]">
           <li>Leads they have not acknowledged move to the next Available person straight away.</li>
           <li>
             Leads they already acknowledged stay with them, marked &ldquo;Owner away&rdquo;. If nothing happens for the idle period they join the

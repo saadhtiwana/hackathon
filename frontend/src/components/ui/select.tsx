@@ -15,7 +15,7 @@ export function Select({
   value?: string;
   onValueChange: (value: string) => void;
   placeholder?: string;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; icon?: React.ReactNode }[];
   label: string;
   disabled?: boolean;
 }) {
@@ -43,7 +43,10 @@ export function Select({
                 value={option.value}
                 className="flex h-9 cursor-pointer items-center justify-between gap-3 rounded-md px-2.5 text-[13px] outline-none data-[highlighted]:bg-surface-hover data-[state=checked]:font-medium"
               >
-                <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
+                <span className="flex min-w-0 items-center gap-2">
+                  {option.icon}
+                  <SelectPrimitive.ItemText>{option.label}</SelectPrimitive.ItemText>
+                </span>
                 <SelectPrimitive.ItemIndicator>
                   <Check className="size-3.5 text-accent-text" aria-hidden />
                 </SelectPrimitive.ItemIndicator>

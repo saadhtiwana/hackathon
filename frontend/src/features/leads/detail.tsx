@@ -9,6 +9,8 @@ import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader } from "@/components/ui/card";
+import { BigTimer, Countdown } from "@/components/ui/countdown";
 import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -20,8 +22,8 @@ import { useToast } from "@/components/ui/toast";
 import { isApiError } from "@/lib/api";
 import { can } from "@/lib/permissions";
 import { useAcknowledge, useCloseLead, useLead, useMemberNames, type Assignment, type Lead } from "./api";
-import { DeadlineCountdown } from "./components/deadline-countdown";
 import { assignmentTitle, endLabel, LeadStatusPill, RecoveryReasonLine, skipLabel, SourceLabel } from "./components/labels";
+import { Owner } from "./components/owner";
 import { ReassignDialog } from "./components/reassign-dialog";
 import { formatDuration, useServerNow } from "./time";
 
@@ -50,7 +52,7 @@ export function LeadDetail() {
       <>
         <Breadcrumbs items={[{ href: "/leads", label: "Leads" }, { label: "Lead" }]} />
         {missing ? (
-          <p className="text-[13px] text-muted">This lead does not exist, or it is not yours to see.</p>
+          <p className="text-[14px] text-text-muted">This lead does not exist, or it is not yours to see.</p>
         ) : (
           <div className="flex flex-col items-start gap-3">
             <Notice error={detail.error} />
@@ -78,7 +80,9 @@ export function LeadDetail() {
         actions={<LeadActions lead={lead} isOwner={isOwner} canReassign={canReassign} />}
       />
 
-      <dl className="mb-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-md border border-line bg-surface p-4 sm:grid-cols-4">
+      <div className={lead.status === "assigned" && lead.ackDeadline ? "mb-6 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(260px,1fr)]" : "mb-6"}>
+      <Card>
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-5 p-5 sm:grid-cols-3">
         <Fact label="Status">
           <span className="flex flex-wrap items-center gap-2">
             <LeadStatusPill status={lead.status} />
@@ -91,36 +95,39 @@ export function LeadDetail() {
           </span>
         </Fact>
         <Fact label="Owner">
-          {lead.ownerId ? (
-            <span className="inline-flex items-center gap-2 text-[13px]">
-              <Avatar name={nameOf(lead.ownerId)} />
-              {isOwner ? "You" : nameOf(lead.ownerId)}
-            </span>
-          ) : (
-            <span className="text-[13px] text-muted">Nobody</span>
-          )}
+          <span className="text-[14px]">
+            <Owner id={lead.ownerId} me={myId} size="md" />
+          </span>
         </Fact>
         <Fact label="Time to acknowledge">
           {lead.status === "assigned" && lead.ackDeadline ? (
-            <DeadlineCountdown deadline={lead.ackDeadline} startedAt={lead.assignedAt} />
+            <Countdown deadline={lead.ackDeadline} startedAt={lead.assignedAt} />
           ) : (
-            <span className="text-[13px] text-muted">{lead.status === "acknowledged" ? "Acknowledged" : "–"}</span>
+            <span className="text-[13px] text-text-muted">{lead.status === "acknowledged" ? "Acknowledged" : "–"}</span>
           )}
         </Fact>
         <Fact label="Source">
           <SourceLabel source={lead.source} />
         </Fact>
         <Fact label="Escalations">
-          <span className="font-mono text-[13px] tabular-nums">{lead.escalationCount}</span>
+          <span className="text-[20px] leading-none font-semibold tabular-nums">{lead.escalationCount}</span>
         </Fact>
         <Fact label="Created">
-          <span className="font-mono text-[13px] tabular-nums">{clock(lead.createdAt)}</span>
+          <span className="text-[13px] tabular-nums">{clock(lead.createdAt)}</span>
         </Fact>
       </dl>
+      </Card>
+      {lead.status === "assigned" && lead.ackDeadline ? (
+        <Card className="flex flex-col justify-center p-5">
+          <p className="mb-3 text-[13px] font-medium text-text-muted">{isOwner ? "Your window" : `${nameOf(lead.ownerId)}'s window`}</p>
+          <BigTimer deadline={lead.ackDeadline} startedAt={lead.assignedAt} />
+        </Card>
+      ) : null}
+      </div>
 
       {recoveryReasons.length ? (
-        <section className="mb-6 rounded-md border border-signal/40 bg-[color-mix(in_srgb,var(--signal)_6%,transparent)] p-3" aria-labelledby="recovery-h">
-          <h2 id="recovery-h" className="mb-2 text-[13px] font-medium">
+        <section className="mb-6 rounded-xl border border-[color-mix(in_srgb,var(--danger)_30%,transparent)] bg-[color-mix(in_srgb,var(--danger)_6%,transparent)] p-4" aria-labelledby="recovery-h">
+          <h2 id="recovery-h" className="mb-2 text-[14px] font-semibold">
             In the recovery queue
           </h2>
           <ul className="flex flex-col gap-1">
@@ -134,29 +141,29 @@ export function LeadDetail() {
       ) : null}
 
       {lead.ownerAway ? (
-        <p className="mb-6 text-[13px] text-muted">
+        <p className="mb-6 rounded-xl bg-tint-yellow p-4 text-[13px] text-tint-yellow-text">
           The owner went on leave or offline after acknowledging. The lead stays with them and moves to the recovery queue if nothing happens for
           the idle period. A manager can reassign it at any time.
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <section aria-labelledby="custody-h">
-          <h2 id="custody-h" className="mb-2 text-[14px] font-medium">
-            Custody chain
-          </h2>
-          {assignments.length ? (
-            <CustodyChain assignments={assignments} />
-          ) : (
-            <p className="text-[13px] text-muted">Nobody has held this lead yet.</p>
-          )}
-        </section>
-        <section aria-labelledby="skipped-h">
-          <h2 id="skipped-h" className="mb-2 text-[14px] font-medium">
-            Skipped
-          </h2>
-          <SkippedList assignments={assignments} nameOf={nameOf} />
-        </section>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader title="Custody chain" description="Everyone who has held this lead, and why it moved." />
+          <div className="p-5">
+            {assignments.length ? (
+              <CustodyChain assignments={assignments} />
+            ) : (
+              <p className="text-[13px] text-text-muted">Nobody has held this lead yet.</p>
+            )}
+          </div>
+        </Card>
+        <Card>
+          <CardHeader title="Skipped" description="Passed over by round-robin or escalation." />
+          <div className="p-5">
+            <SkippedList assignments={assignments} nameOf={nameOf} />
+          </div>
+        </Card>
       </div>
     </>
   );
@@ -165,7 +172,7 @@ export function LeadDetail() {
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex min-w-0 flex-col gap-1">
-      <dt className="text-[12px] text-muted">{label}</dt>
+      <dt className="text-[12px] font-medium text-text-muted">{label}</dt>
       <dd>{children}</dd>
     </div>
   );
@@ -182,7 +189,16 @@ function CustodyChain({ assignments }: { assignments: Assignment[] }) {
           : now
             ? `Holding for ${formatDuration((now - start) / 1000)}`
             : "Holding now";
-        return <TimelineItem key={a.id} title={assignmentTitle(a.reason, a.level, a.userName)} meta={clock(a.assignedAt)} body={held} />;
+        return (
+          <TimelineItem
+            key={a.id}
+            title={assignmentTitle(a.reason, a.level, a.userName)}
+            meta={clock(a.assignedAt)}
+            body={held}
+            current={!a.endedAt}
+            avatar={<Avatar name={a.userName} id={a.userId} size="md" />}
+          />
+        );
       })}
     </Timeline>
   );
@@ -190,16 +206,19 @@ function CustodyChain({ assignments }: { assignments: Assignment[] }) {
 
 function SkippedList({ assignments, nameOf }: { assignments: Assignment[]; nameOf: (id: string) => string }) {
   const withSkips = assignments.filter((a) => a.skipped.length);
-  if (!withSkips.length) return <p className="text-[13px] text-muted">Nobody was passed over.</p>;
+  if (!withSkips.length) return <p className="text-[13px] text-text-muted">Nobody was passed over.</p>;
   return (
     <ul className="flex flex-col gap-3">
       {withSkips.map((a) => (
         <li key={a.id} className="text-[13px]">
-          <p className="text-[12px] text-muted">When it went to {a.userName}</p>
-          <ul className="mt-1 flex flex-col gap-0.5">
+          <p className="text-[12px] text-text-muted">When it went to {a.userName}</p>
+          <ul className="mt-2 flex flex-col gap-2">
             {a.skipped.map((s) => (
               <li key={s.userId} className="flex items-center justify-between gap-2">
-                <span>{nameOf(s.userId)}</span>
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <Avatar name={nameOf(s.userId)} id={s.userId} size="xs" />
+                  <span className="truncate">{nameOf(s.userId)}</span>
+                </span>
                 <Badge tone={s.reason === "at_capacity" ? "warn" : "neutral"}>{skipLabel[s.reason] ?? s.reason}</Badge>
               </li>
             ))}

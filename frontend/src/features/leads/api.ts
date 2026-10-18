@@ -151,6 +151,12 @@ export function useMembers() {
   return useQuery({ queryKey: leadKeys.members, queryFn: leadsApi.members, staleTime: 10_000 });
 }
 
+export function useMemberLookup() {
+  const members = useMembers();
+  const byId = new Map((members.data?.items ?? []).map((m) => [m.userId, m]));
+  return (id: string | null | undefined) => (id ? byId.get(id) : undefined);
+}
+
 export function useMemberNames() {
   const members = useMembers();
   const names = new Map((members.data?.items ?? []).map((m) => [m.userId, m.name]));

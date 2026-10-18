@@ -25,7 +25,7 @@ export function SourceLabel({ source }: { source: LeadSource }) {
   const s = sources[source] ?? sources.manual;
   const Icon = s.icon;
   return (
-    <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
+    <span className="inline-flex items-center gap-1.5 text-[13px] text-text-muted">
       <Icon className="size-3.5" aria-hidden />
       {s.label}
     </span>
@@ -64,7 +64,7 @@ const recoveryIcon: Record<RecoveryCode, typeof Clock> = {
 export function RecoveryReasonLine({ code, text }: { code: RecoveryCode; text: string }) {
   const Icon = recoveryIcon[code] ?? CircleAlert;
   return (
-    <span className="inline-flex items-start gap-1.5 text-[13px] text-signal">
+    <span className="inline-flex items-start gap-1.5 text-[13px] text-danger">
       <Icon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
       <span>{text}</span>
     </span>

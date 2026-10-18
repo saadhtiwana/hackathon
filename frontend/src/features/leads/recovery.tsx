@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { LifeBuoy } from "lucide-react";
 import { useMe } from "@/components/session";
-import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,6 +13,7 @@ import { Table, type Column } from "@/components/ui/table";
 import { can } from "@/lib/permissions";
 import { useMemberNames, useRecovery, type Lead, type RecoveryReason } from "./api";
 import { LeadStatusPill, RecoveryReasonLine } from "./components/labels";
+import { Owner } from "./components/owner";
 import { ReassignDialog } from "./components/reassign-dialog";
 import { formatDuration, useServerNow } from "./time";
 
@@ -56,16 +57,12 @@ export function RecoveryQueue() {
       key: "owner",
       header: "Owner",
       sortValue: (r) => nameOf(r.lead.ownerId),
-      render: (r) =>
-        r.lead.ownerId ? (
-          <span className="inline-flex items-center gap-2">
-            <Avatar name={nameOf(r.lead.ownerId)} />
-            {nameOf(r.lead.ownerId)}
-            {r.lead.ownerAway ? <Badge tone="warn">Away</Badge> : null}
-          </span>
-        ) : (
-          <span className="text-muted">Nobody</span>
-        ),
+      render: (r) => (
+        <span className="inline-flex items-center gap-2">
+          <Owner id={r.lead.ownerId} />
+          {r.lead.ownerAway ? <Badge tone="warn">Away</Badge> : null}
+        </span>
+      ),
     },
     {
       key: "age",
@@ -73,7 +70,7 @@ export function RecoveryQueue() {
       align: "right",
       sortValue: (r) => new Date(r.lead.createdAt).getTime(),
       render: (r) => (
-        <span className="font-mono tabular-nums">{now ? formatDuration((now - new Date(r.lead.createdAt).getTime()) / 1000) : "–"}</span>
+        <span className="tabular-nums">{now ? formatDuration((now - new Date(r.lead.createdAt).getTime()) / 1000) : "–"}</span>
       ),
     },
     {
@@ -112,7 +109,7 @@ export function RecoveryQueue() {
           </Button>
         </div>
       ) : !queue.data?.items.length ? (
-        <EmptyState title="Nothing needs rescuing" body="Every open lead has an owner who is on it. Leads land here the moment they slip." />
+        <EmptyState icon={LifeBuoy} title="Nothing needs rescuing" body="Every open lead has an owner who is on it. Leads land here the moment they slip." />
       ) : (
         <Table caption="Recovery queue" columns={columns} rows={queue.data.items} rowKey={(r) => r.lead.id} pageSize={15} />
       )}

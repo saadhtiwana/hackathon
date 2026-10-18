@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Field } from "@/components/ui/field";
@@ -55,11 +56,15 @@ export function ReassignDialog({ lead, trigger }: { lead: Lead; trigger: React.R
             value={toUserId || undefined}
             onValueChange={setToUserId}
             disabled={!eligible.length}
-            options={eligible.map((m) => ({ value: m.userId, label: `${m.name} · ${m.openLeads} open` }))}
+            options={eligible.map((m) => ({
+              value: m.userId,
+              label: `${m.name} · ${m.openLeads} open`,
+              icon: <Avatar name={m.name} id={m.userId} size="xs" status={m.status} />,
+            }))}
           />
         </Field>
         {unavailable.length ? (
-          <p className="text-[12px] text-muted">
+          <p className="text-[12px] text-text-muted">
             Not available: {unavailable.map((m) => `${m.name} (${statusWord[m.status]})`).join(", ")}
           </p>
         ) : null}

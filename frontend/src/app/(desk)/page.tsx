@@ -1,5 +1,7 @@
 import { Placeholder } from "@/features/placeholder";
 
+export const metadata = { title: "Dashboard" };
+
 export default function DashboardPage() {
   return (
     <Placeholder

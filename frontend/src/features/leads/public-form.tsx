@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { isApiError } from "@/lib/api";
 import { leadsApi } from "./api";
+import { Lockup } from "@/components/brand/logo";
 import { useAgencyEmail } from "../agency/use-agency-email";
 
 type Draft = { name: string; phone: string; email: string; message: string; website: string };
@@ -99,9 +100,7 @@ export function PublicLeadForm() {
             }}
           >
             <div className="mb-1">
-              <span className="mb-4 inline-flex size-10 items-center justify-center rounded-xl bg-accent text-[16px] font-semibold text-on-accent" aria-hidden>
-                {form.data?.workspaceName.trim()[0]?.toUpperCase() ?? "R"}
-              </span>
+              <Lockup size={32} className="mb-4" />
               <h1 className="text-[24px] leading-tight font-semibold tracking-tight">Talk to {form.data?.workspaceName}</h1>
               <p className="mt-1.5 text-[14px] text-text-muted">Tell us what you need. A real person picks it up and gets back to you.</p>
             </div>

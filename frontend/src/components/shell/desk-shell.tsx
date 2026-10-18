@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api/client";
 import { can } from "@/lib/permissions";
 import { cn } from "@/lib/cn";
 import { useMe } from "@/components/session";
+import { Lockup, LogoMark, WorkspaceAvatar } from "@/components/brand/logo";
 import { paletteItems, primaryNav, settingsNav, type NavItem } from "@/components/shell/nav";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -45,12 +46,22 @@ async function countOpenLeads() {
 
 function Brand({ name, rail }: { name: string; rail?: boolean }) {
   return (
-    <Link href="/" className="mb-5 flex h-9 items-center gap-2.5 rounded-md px-2 hover:bg-surface-hover">
-      <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-accent text-[12px] font-semibold text-on-accent">
-        {name.trim()[0]?.toUpperCase() ?? "R"}
-      </span>
-      <span className={cn("min-w-0 truncate text-[14px] font-semibold", rail && "md:sr-only lg:not-sr-only")}>{name}</span>
-    </Link>
+    <div className="mb-5">
+      <Link href="/" aria-label="Relay home" className="flex h-9 items-center rounded-md px-2 hover:bg-surface-hover">
+        {rail ? (
+          <>
+            <LogoMark className="lg:hidden" />
+            <Lockup className="hidden lg:inline-flex" />
+          </>
+        ) : (
+          <Lockup />
+        )}
+      </Link>
+      <div className="mt-2 flex items-center gap-2 px-2" title={name}>
+        <WorkspaceAvatar name={name} />
+        <span className={cn("min-w-0 truncate text-[13px] text-text-muted", rail && "md:sr-only lg:not-sr-only")}>{name}</span>
+      </div>
+    </div>
   );
 }
 
@@ -103,7 +114,7 @@ function NavLink({ item, active, count, rail, onNavigate }: { item: NavItem; act
         <span
           className={cn(
             "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums",
-            active ? "bg-accent text-on-accent" : "bg-surface-muted text-text-muted",
+            "bg-surface-muted text-text-muted",
             rail && "md:absolute md:-top-1 md:-right-1 lg:static",
           )}
           aria-label={`${count} open`}

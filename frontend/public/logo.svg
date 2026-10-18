@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Relay">
+  <rect width="64" height="64" rx="15" fill="#17140F"/>
+  <g transform="rotate(-45 32 32)">
+    <rect x="4" y="25" width="33" height="14" rx="7" fill="#FFFDF8"/>
+    <rect x="27" y="25" width="33" height="14" rx="7" fill="#E5482A" stroke="#17140F" stroke-width="2.5"/>
+  </g>
+</svg>

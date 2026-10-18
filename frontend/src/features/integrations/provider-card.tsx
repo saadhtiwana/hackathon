@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
-import { CalendarDays, Check, CreditCard, Mail, MessageCircle, Plug, X } from "lucide-react";
+import { Bell, CalendarDays, Check, CreditCard, Mail, Plug, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,7 +14,7 @@ import { StatusPill } from "@/components/ui/status-pill";
 import { useToast } from "@/components/ui/toast";
 import { useConnect, useDisconnect, useTest, type Integration } from "./api";
 
-const icons: Record<string, typeof Plug> = { stripe: CreditCard, email: Mail, google_calendar: CalendarDays, discord: MessageCircle };
+const icons: Record<string, typeof Plug> = { stripe: CreditCard, email: Mail, google_calendar: CalendarDays, email_alerts: Bell };
 const ago = (iso: string | null) => (iso ? `${formatDistanceToNowStrict(new Date(iso))} ago` : "never");
 
 export function ProviderCard({ item, canManage, retired }: { item: Integration; canManage: boolean; retired?: boolean }) {
@@ -46,6 +46,11 @@ export function ProviderCard({ item, canManage, retired }: { item: Integration; 
         <div className="min-w-0 flex-1">
           <h2 className="text-[15px] font-semibold">{item.label}</h2>
           <p className="text-[13px] text-text-muted">{retired ? "No longer used. Customer messaging moved to email." : item.limits.summary}</p>
+          {(item as { agencyAddress?: string | null }).agencyAddress ? (
+            <p className="mt-1 text-[12px] text-text-muted">
+              Customers write to <span className="font-mono">{(item as { agencyAddress?: string | null }).agencyAddress}</span>
+            </p>
+          ) : null}
         </div>
         {status === "connected" ? (
           <StatusPill tone="ok">Connected</StatusPill>

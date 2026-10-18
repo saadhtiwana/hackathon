@@ -21,7 +21,6 @@ const providers = [
   { value: "stripe", label: "Stripe" },
   { value: "email", label: "Email" },
   { value: "google_calendar", label: "Google Calendar" },
-  { value: "discord", label: "Discord" },
 ];
 
 export function SyncHistory() {

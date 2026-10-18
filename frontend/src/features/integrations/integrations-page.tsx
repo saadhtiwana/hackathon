@@ -16,10 +16,10 @@ import { MissingProviderCard, ProviderCard } from "./provider-card";
 import { CalendarPeople, FailedAlerts, SyncHistory } from "./tables";
 
 const order = [
-  { id: "stripe", label: "Stripe" },
-  { id: "email", label: "Email (agency Gmail)" },
-  { id: "google_calendar", label: "Google Calendar" },
-  { id: "discord", label: "Discord" },
+  { id: "stripe", label: "Stripe (payments)" },
+  { id: "email", label: "Email via Gmail (messaging)" },
+  { id: "google_calendar", label: "Google Calendar (calendar)" },
+  { id: "email_alerts", label: "Email alerts (notifications)" },
 ];
 
 export function IntegrationsPage() {
@@ -56,7 +56,7 @@ export function IntegrationsPage() {
           <div className="grid gap-4 lg:grid-cols-2">
             {order.map((o) => {
               const item = items.find((i) => i.provider === o.id);
-              return item ? <ProviderCard key={o.id} item={item} canManage={canManage} retired={o.id === "discord"} /> : <MissingProviderCard key={o.id} label={o.label} />;
+              return item ? <ProviderCard key={o.id} item={item} canManage={canManage} /> : <MissingProviderCard key={o.id} label={o.label} />;
             })}
           </div>
           <CalendarPeople canManage={canManage} />

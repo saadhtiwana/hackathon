@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api/client";
 
-export type ProviderId = "stripe" | "email" | "google_calendar" | "discord";
+export type ProviderId = "stripe" | "email" | "google_calendar" | "email_alerts";
 
 export type Integration = {
   provider: ProviderId | string;

@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { isApiError } from "@/lib/api";
 import { leadsApi } from "./api";
+import { useAgencyEmail } from "../agency/use-agency-email";
 
 type Draft = { name: string; phone: string; email: string; message: string; website: string };
 const empty: Draft = { name: "", phone: "", email: "", message: "", website: "" };
@@ -22,6 +23,7 @@ export function PublicLeadForm() {
     queryFn: () => leadsApi.publicForm(workspaceSlug),
     retry: false,
   });
+  const agency = useAgencyEmail(workspaceSlug);
   const [draft, setDraft] = useState<Draft>(empty);
   const [localError, setLocalError] = useState<string | null>(null);
   const submit = useMutation({
@@ -132,6 +134,11 @@ export function PublicLeadForm() {
               <Clock className="size-3.5" aria-hidden />
               Usually answered within a few minutes
             </p>
+            {agency.data?.email ? (
+              <p className="text-center text-[12px] text-text-muted">
+                Or email us at <a className="font-medium text-text underline" href={`mailto:${agency.data.email}`}>{agency.data.email}</a>
+              </p>
+            ) : null}
           </form>
         )}
       </div>

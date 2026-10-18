@@ -7,7 +7,7 @@ export const customFieldType = pgEnum('custom_field_type', ['text', 'number', 'd
 export const activityType = pgEnum('activity_type', [
   'note', 'call_log', 'stage_change', 'assignment', 'field_edit', 'message', 'payment', 'appointment', 'lead_ack', 'lead_escalation',
 ]);
-export const leadSource = pgEnum('lead_source', ['webform', 'whatsapp', 'manual']);
+export const leadSource = pgEnum('lead_source', ['webform', 'whatsapp', 'manual', 'discord']);
 export const leadStatus = pgEnum('lead_status', ['unassigned', 'assigned', 'acknowledged', 'closed']);
 export const assignmentReason = pgEnum('assignment_reason', ['initial', 'ack_expired', 'manual', 'owner_unavailable']);
 export const messageDirection = pgEnum('message_direction', ['in', 'out']);

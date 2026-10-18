@@ -48,14 +48,14 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | I1.7 | Failure handling | Saad | todo |
 | I1.8 | Duplicates | Saad | todo |
 | I1.9 | Opt-out | Saad | todo |
-| I2.1 | Create a payment request | Saad | todo |
-| I2.2 | Payment confirmation by webhook | Saad | todo |
-| I2.3 | Request authenticity | Saad | in progress |
-| I2.4 | Idempotent processing | Saad | todo |
-| I2.5 | Other outcomes | Saad | todo |
-| I2.6 | Collected versus expected | Saad | todo |
-| I2.7 | Traceability | Saad | todo |
-| I2.8 | No card data stored | Saad | todo |
+| I2.1 | Create a payment request | Saad | done |
+| I2.2 | Payment confirmation by webhook | Saad | done |
+| I2.3 | Request authenticity | Saad | done |
+| I2.4 | Idempotent processing | Saad | done |
+| I2.5 | Other outcomes | Saad | done |
+| I2.6 | Collected versus expected | Saad | done |
+| I2.7 | Traceability | Saad | done |
+| I2.8 | No card data stored | Saad | done |
 | I3.1 | Connect with consent | Saad | todo |
 | I3.2 | Token handling | Saad | todo |
 | I3.3 | Create appointments | Saad | todo |
@@ -67,14 +67,14 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | I4.2 | Useful content | Saad | todo |
 | I4.3 | Per-user routing | Saad | todo |
 | I4.4 | Failure handling | Saad | todo |
-| I5.1 | Central integrations page | Saad | todo |
-| I5.2 | Per-workspace configuration | Saad | todo |
-| I5.3 | Secret handling | Saad | in progress |
-| I5.4 | Synchronization history | Saad | in progress |
-| I5.5 | Resilience | Saad | todo |
-| I5.6 | Clearly stated limits | Saad | todo |
-| I5.7 | Permission and audit | Saad | todo |
-| I5.8 | Isolation of failures | Saad | todo |
+| I5.1 | Central integrations page | Saad | done |
+| I5.2 | Per-workspace configuration | Saad | done |
+| I5.3 | Secret handling | Saad | done |
+| I5.4 | Synchronization history | Saad | done |
+| I5.5 | Resilience | Saad | done |
+| I5.6 | Clearly stated limits | Saad | done |
+| I5.7 | Permission and audit | Saad | done |
+| I5.8 | Isolation of failures | Saad | done |
 | Q1 | Authentication security | All | done |
 | Q2 | Authorization | All | done |
 | Q3 | Input safety | All | done |

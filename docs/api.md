@@ -125,16 +125,6 @@
 | POST | /messages/:id/retry | crm.edit | - | `{message}` new message, `retryOf` set |
 | POST | /contacts/:id/messages | crm.edit | `{body}` | starts conversation if none |
 
-## Payments
-
-| Method | Path | Perm | Request | Response |
-|---|---|---|---|---|
-| POST | /opportunities/:id/payments | crm.edit | `{amountCents,currency,description?,sendVia?:"whatsapp"}` | `201 {payment:{id,status:"requested",url,...}}` |
-| GET | /payments | crm.view | `?opportunityId&contactId&status&limit&cursor` | `{items:[payment]}` |
-| GET | /payments/:id | crm.view | - | `{payment,opportunity,contact,requestedBy,providerRef}` |
-| POST | /payments/:id/resend | crm.edit | - | `{ok}` |
-| GET | /payments/summary | crm.view | `?from&to` | `{collectedCents,projectedCents,unpaidCents,refundedCents}` |
-
 ## Appointments and calendar
 
 | Method | Path | Perm | Request | Response |
@@ -150,21 +140,31 @@
 
 ## Integrations and sync history
 
+Providers: `stripe`, `discord`, `google_calendar`. Secrets are encrypted per workspace and never returned; responses carry only a masked last four.
+
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
-| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretLast4,limits,webhookUrl}]}` |
-| PUT | /integrations/twilio | integrations.manage | `{accountSid,authToken,whatsappFrom}` | `{integration}` verified with a live call |
-| PUT | /integrations/stripe | integrations.manage | `{secretKey,webhookSecret}` | `{integration}` |
-| PUT | /integrations/telegram | integrations.manage | `{botToken}` | `{integration}` |
-| DELETE | /integrations/:provider | integrations.manage | - | `204` (audited) |
-| GET | /integrations/events | integrations.manage or audit.view | `?provider&direction&result&from&to&limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}]}` |
-| GET | /integrations/failed-alerts | integrations.manage | - | `{items:[outbox job]}` |
-| GET | /notification-settings | - | - | `{telegramLinked,channel:"telegram",notifyOnEscalation,notifyOnMessage}` |
-| PUT | /notification-settings | - | `{notifyOnEscalation?,notifyOnMessage?}` | same |
-| POST | /notification-settings/telegram/link | - | - | `{deepLink,code}` user opens the bot with the code |
-| DELETE | /notification-settings/telegram | - | - | `204` |
+| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,label,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretMasked,recentErrors:[{type,message,at}],limits:{summary,can[],cannot[]},perUser}]}` |
+| POST | /integrations/stripe/connect | integrations.manage | `{secretKey:"sk_test_..."}` | `201 {provider,status,secretMasked}`; verifies the key, creates the webhook endpoint for `PUBLIC_API_URL/webhooks/stripe/:workspaceId`, stores the signing secret encrypted; live keys refused |
+| POST | /integrations/discord/connect | integrations.manage | `{botToken,guildId?,channelId?}` | `201 {provider,status,secretMasked}` |
+| POST | /integrations/google_calendar/connect | integrations.manage | `{}` | `201 {authUrl,state}` per-employee OAuth consent URL |
+| POST | /integrations/:provider/test | integrations.manage | - | `{ok:true}` or `{ok:false,error:{code,message,temporary}}` |
+| DELETE | /integrations/:provider | integrations.manage | - | `204` removes the secret and, for Stripe, the remote webhook endpoint (audited) |
+| GET | /integrations/:provider/events | integrations.manage or audit.view | `?limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}],nextCursor}` |
 
-Webhooks (no session; signature verified): `POST /webhooks/twilio/:workspaceId/inbound`, `POST /webhooks/twilio/:workspaceId/status`, `POST /webhooks/stripe/:workspaceId`, `POST /webhooks/telegram/:workspaceId`. Each returns 200 on duplicate, 403 on bad signature (recorded as `rejected`).
+Connect failures: `422` for permanent problems (plain message, for example "The provider rejected the credentials"), `503` for temporary ones (network, 5xx, 429 are retried with backoff first).
+
+## Payments
+
+| Method | Path | Perm | Request | Response |
+|---|---|---|---|---|
+| POST | /opportunities/:id/payments | crm.edit | `{amount:1500.5\|amountCents:150050,currency?,description?}` | `201 {payment:{id,status:"requested",url,amountCents,currency,...}}` Stripe Checkout URL; `409 stripe_not_connected` |
+| GET | /payments | crm.view | `?status&opportunityId&contactId&limit&cursor` | `{items:[{id,status,amountCents,refundedCents,currency,url,failureReason,opportunityName,contactName,requestedByName,createdAt,paidAt}],nextCursor,total}` |
+| GET | /payments/:id | crm.view | - | `{payment,opportunity,contact,requestedBy,providerRef:{provider,sessionId,paymentIntentId}}` |
+| POST | /payments/:id/expire | crm.edit | - | expires the open Checkout session; `{payment,...}` with status `expired` |
+| GET | /payments/summary | crm.view_values | `?from&to` | `{currency,collectedCents,refundedCents,openPipelineCents,unpaidRequestedCents,projectedCents}` |
+
+Webhook: `POST /webhooks/stripe/:workspaceId` (raw body, `Stripe-Signature` verified with that workspace's secret). Forged or unsigned requests get `400` and are recorded as rejected; a repeated event id returns `200 {duplicate:true}` and changes nothing; processing errors return `500` so Stripe retries.
 
 ## Audit log
 

@@ -6,7 +6,7 @@ import type { Availability, List } from "@/lib/api";
 import { learnServerClock } from "./time";
 
 export type LeadStatus = "unassigned" | "assigned" | "acknowledged" | "closed";
-export type LeadSource = "webform" | "whatsapp" | "manual" | "discord";
+export type LeadSource = "webform" | "whatsapp" | "manual" | "discord" | "email";
 export type SkipReason = "on_leave" | "offline" | "busy" | "at_capacity" | "excluded";
 export type AssignmentReason = "initial" | "ack_expired" | "manual" | "owner_unavailable";
 export type RecoveryCode = "unacked_overdue" | "escalated_multiple" | "idle";

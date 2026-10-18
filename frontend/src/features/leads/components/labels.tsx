@@ -1,4 +1,4 @@
-import { CircleAlert, Clock, Globe, MessageCircle, PenLine, Repeat, UserMinus } from "lucide-react";
+import { CircleAlert, Clock, Globe, Mail, MessageCircle, PenLine, Repeat, UserMinus } from "lucide-react";
 import { StatusPill } from "@/components/ui/status-pill";
 import type { AssignmentReason, LeadSource, LeadStatus, RecoveryCode, SkipReason } from "../api";
 
@@ -18,6 +18,7 @@ const sources: Record<LeadSource, { label: string; icon: typeof Globe }> = {
   webform: { label: "Web form", icon: Globe },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
   discord: { label: "Discord", icon: MessageCircle },
+  email: { label: "Email", icon: Mail },
   manual: { label: "Manual", icon: PenLine },
 };
 

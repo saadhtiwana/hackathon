@@ -13,6 +13,9 @@ import { rolesRouter } from './modules/roles/routes.js';
 import { crmRouter } from './modules/crm/routes.js';
 import { leadsRouter } from './modules/leads/index.js';
 import { internalRouter } from './core/scheduler/index.js';
+import { integrationsRouter } from './modules/integrations/routes.js';
+import { paymentsRouter } from './modules/payments/routes.js';
+import { stripeWebhookRouter } from './modules/payments/webhook.js';
 
 export function createApp() {
   const app = express();
@@ -20,6 +23,9 @@ export function createApp() {
   app.disable('x-powered-by');
   app.use(requestId);
   app.use(helmet());
+
+  // Signed webhooks need the untouched body, so they mount before the JSON parsers.
+  app.use('/webhooks/stripe', stripeWebhookRouter);
 
   const keepRaw = (req: express.Request, _res: express.Response, buf: Buffer) => {
     req.rawBody = buf;
@@ -45,6 +51,8 @@ export function createApp() {
   api.use(usersRouter);
   api.use(rolesRouter);
   api.use(crmRouter);
+  api.use(integrationsRouter);
+  api.use(paymentsRouter);
   api.use(leadsRouter);
   app.use('/api', api);
 

@@ -115,9 +115,9 @@
 | POST | /public/leads/:workspaceSlug | public, rate limited | `{name,phone?,email?,message?,website?}` (`website` honeypot) | `201 {ok:true}` |
 | GET | /public/forms/:workspaceSlug | public | - | `{workspaceName,fields[]}` |
 
-## Conversations and messages (Discord)
+## Conversations and messages (email, Discord)
 
-Channel is Discord (Twilio and Telegram are unavailable in Pakistan); the adapter sits behind the integrations framework so the provider can change by configuration. Customers must join the customer server first.
+Primary channel is email through the agency Gmail account (Twilio blocks Pakistani signups and Telegram is blocked); Discord stays available behind the same framework. The inbox is polled every 30 seconds. An email from an unknown sender creates a contact and a lead (source `email`); `STOP` as the subject or the whole body opts the contact out. Replies go out in the same thread. Each channel is its own conversation per contact and sending uses the conversation's channel.
 
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
@@ -126,7 +126,7 @@ Channel is Discord (Twilio and Telegram are unavailable in Pakistan); the adapte
 | POST | /conversations/:id/messages | crm.edit | `{body}` | `201 {message}` status `queued`, then `sent` or `failed`; `409 opted_out` with the reason; `409 no_discord_id` |
 | POST | /contacts/:id/messages | crm.edit | `{body}` | same, starts the conversation if none |
 | POST | /messages/:id/retry | crm.edit | - | `201 {message}` new message with `retryOf` set |
-| POST | /payments/:id/send | crm.edit | - | `201 {message}` sends the Checkout link over Discord and records an activity |
+| POST | /payments/:id/send | crm.edit | - | `201 {message}` emails the Checkout link to the contact and records an activity |
 
 Message states: `received` (inbound), `queued`, `sent` (Discord message id stored), `failed` (Discord code and plain explanation). Discord has no delivered or read receipts.
 
@@ -143,6 +143,50 @@ Discord interactions: `POST /webhooks/discord/:workspaceId` (Ed25519 signature w
 | GET | /payments/summary | crm.view_values | `?from&to` | `{currency,collectedCents,refundedCents,openPipelineCents,unpaidRequestedCents,projectedCents}` |
 
 Webhook: `POST /webhooks/stripe/:workspaceId` (raw body, `Stripe-Signature` verified with that workspace's secret). Forged or unsigned requests get `400` and are recorded as rejected; a repeated event id returns `200 {duplicate:true}` and changes nothing; processing errors return `500` so Stripe retries.
+
+## Google: calendar and agency mailbox
+
+One Google OAuth client serves two purposes. Consent uses `access_type=offline`; tokens are stored encrypted on the server, refreshed automatically, and never sent to the browser. A revoked or expired grant marks the connection `needs_reconnect`. The Google app is in Testing mode: only listed test users can connect and refresh tokens may expire after 7 days.
+
+| Method | Path | Perm | Request | Response |
+|---|---|---|---|---|
+| GET | /integrations/google/connect | session, or `?token=` link | `?purpose=calendar\|mailbox` | `302` to Google consent. `calendar` connects the signed-in employee; `mailbox` (needs integrations.manage) connects the agency mailbox |
+| POST | /integrations/google/connect-link | integrations.manage | `{purpose,userId?}` | `201 {url,expiresAt}` signed single-use link (24 h) so the Google account owner needs no session |
+| GET | /integrations/google/callback | signed state | `?code&state` | `302` to `APP_URL/settings/integrations?google=connected\|error&reason=...`; audited |
+| GET | /integrations/google/users | crm.view | - | `{items:[{userId,name,status:"connected"\|"needs_reconnect"\|"not_connected",account,bookable,reason}]}` |
+| GET | /users/:id/busy | crm.view | `?from&to` (max 31 days) | `{busy:[{start,end}]}` from Google free/busy; `422 calendar_not_connected` explains why |
+| GET | /appointments | crm.view | `?userId&contactId&opportunityId&from&to&includeCancelled` | `{items:[{id,userName,contactName,title,startsAt,endsAt,timezone,status}]}` upcoming by default |
+| POST | /appointments | crm.edit | `{userId,contactId,opportunityId?,start,end,timeZone,title,notes?,force?}` | `201 {appointment}`; `409 calendar_conflict {conflicts}` unless `force`; `422` if the employee has no working calendar |
+| PATCH | /appointments/:id | crm.edit | `{start?,end?,timeZone?,title?,notes?,force?}` | `{appointment}` updates the Google event; activity recorded |
+| DELETE | /appointments/:id | crm.edit | - | `{appointment}` status `cancelled`, Google event deleted |
+
+Times are stored as UTC instants plus the IANA time zone.
+
+## Integrations and sync history
+
+Providers: `stripe`, `discord`, `google_calendar`, `email` (agency Gmail). Secrets are encrypted per workspace and never returned; responses carry only a masked last four.
+
+| Method | Path | Perm | Request | Response |
+|---|---|---|---|---|
+| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,label,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretMasked,account?,gatewayOnline?,recentErrors:[{type,message,at}],limits:{summary,can[],cannot[]},perUser}]}` |
+| POST | /integrations/stripe/connect | integrations.manage | `{secretKey:"sk_test_..."}` | `201 {provider,status,secretMasked}`; verifies the key and creates the webhook endpoint; live keys refused |
+| POST | /integrations/discord/connect | integrations.manage | `{appId,publicKey,botToken,customerGuildId,staffGuildId}` | `201`; registers slash commands and starts the gateway |
+| POST | /integrations/email/connect | integrations.manage | `{}` | `201 {authUrl}` Google consent for the agency mailbox |
+| POST | /integrations/google_calendar/connect | session | `{}` | `201 {authUrl}` Google consent for the employee's own calendar |
+| POST | /integrations/:provider/test | integrations.manage | - | `{ok:true}` or `{ok:false,error:{code,message,temporary}}` |
+| DELETE | /integrations/:provider | integrations.manage | - | `204` removes secrets and remote registrations, revokes Google grants (audited) |
+| GET | /integrations/:provider/events | integrations.manage or audit.view | `?limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}],nextCursor}` (provider `email` is stored as `gmail`) |
+| GET | /integrations/email/alerts | integrations.manage | - | `{items:[{id,source:"queue"\|"delivery",kind,status:"delivered"\|"not_delivered"\|"retrying"\|"failed",toUserName,leadId,attempts,error,at}]}` |
+| GET | /integrations/discord/alerts | integrations.manage | - | same shape, for Discord delivery |
+| GET | /me/notifications | - | - | `{alertEmail,effectiveEmail,notifyOnEscalation,notifyOnMessage}` |
+| PUT | /me/notifications | - | `{alertEmail?,notifyOnEscalation?,notifyOnMessage?}` | `{ok}` default alert address is the account email |
+| POST | /me/notifications/discord/link-code | - | - | `201 {code,expiresAt,command}` |
+| GET | /me/notifications/discord | - | - | `{linked,discordUserId}` |
+| DELETE | /me/notifications/discord | - | - | `204` |
+
+Connect failures: `422` for permanent problems (plain message), `503` for temporary ones (network, 5xx and 429 are retried with backoff first).
+
+Webhooks (no session; signature verified): `POST /webhooks/stripe/:workspaceId` (400 on bad signature), `POST /webhooks/discord/:workspaceId` (401 on bad signature). Both return 200 on a duplicate and record rejects.
 
 ## Audit log
 

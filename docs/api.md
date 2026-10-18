@@ -115,44 +115,22 @@
 | POST | /public/leads/:workspaceSlug | public, rate limited | `{name,phone?,email?,message?,website?}` (`website` honeypot) | `201 {ok:true}` |
 | GET | /public/forms/:workspaceSlug | public | - | `{workspaceName,fields[]}` |
 
-## Conversations and messages
+## Conversations and messages (Discord)
+
+Channel is Discord (Twilio and Telegram are unavailable in Pakistan); the adapter sits behind the integrations framework so the provider can change by configuration. Customers must join the customer server first.
 
 | Method | Path | Perm | Request | Response |
 |---|---|---|---|---|
-| GET | /conversations | crm.view | `?contactId&ownerId&limit&cursor` | `{items:[{id,contactId,channel,ownerId,lastMessageAt,unread}]}`; own only without leads.reassign |
-| GET | /conversations/:id/messages | crm.view | `?limit&cursor` | `{items:[{id,direction,body,status,errorCode,errorMessage,createdAt}]}` |
-| POST | /conversations/:id/messages | crm.edit | `{body}` | `201 {message}` status `queued`; 409 `opted_out` with reason |
-| POST | /messages/:id/retry | crm.edit | - | `{message}` new message, `retryOf` set |
-| POST | /contacts/:id/messages | crm.edit | `{body}` | starts conversation if none |
+| GET | /conversations | crm.view | `?scope=mine\|unassigned\|all&limit` (`unassigned`/`all` need leads.reassign) | `{items:[{id,contactId,contactName,optedOut,channel,ownerId,ownerName,lastMessageAt,lastMessage:{body,direction,status}}]}` owner follows the open lead |
+| GET | /conversations/:id | crm.view | `?limit&before` | `{conversation:{id,channel,contactId,contactName,optedOut,optOutReason,owner},messages:[{id,direction,body,status,errorCode,errorMessage,retryOf,createdAt}]}` oldest first; 404 if not yours and no leads.reassign |
+| POST | /conversations/:id/messages | crm.edit | `{body}` | `201 {message}` status `queued`, then `sent` or `failed`; `409 opted_out` with the reason; `409 no_discord_id` |
+| POST | /contacts/:id/messages | crm.edit | `{body}` | same, starts the conversation if none |
+| POST | /messages/:id/retry | crm.edit | - | `201 {message}` new message with `retryOf` set |
+| POST | /payments/:id/send | crm.edit | - | `201 {message}` sends the Checkout link over Discord and records an activity |
 
-## Appointments and calendar
+Message states: `received` (inbound), `queued`, `sent` (Discord message id stored), `failed` (Discord code and plain explanation). Discord has no delivered or read receipts.
 
-| Method | Path | Perm | Request | Response |
-|---|---|---|---|---|
-| GET | /integrations/google/connect | - | - | `{authUrl}` |
-| GET | /integrations/google/callback | public (state-checked) | `?code&state` | redirect to app |
-| DELETE | /integrations/google | - | - | `204` disconnect own account |
-| GET | /calendar/busy | crm.view | `?userId&from&to` | `{busy:[{start,end}],timezone}` |
-| GET | /appointments | crm.view | `?userId&contactId&opportunityId&from&to` | `{items:[appointment]}` |
-| POST | /appointments | crm.edit | `{userId,contactId,opportunityId?,title,startsAt,endsAt,timezone,force?}` | `201 {appointment}`; 409 `{code:"conflict",busy:[...]}` unless `force`; 422 `calendar_not_connected` |
-| PATCH | /appointments/:id | crm.edit | `{startsAt?,endsAt?,timezone?,title?}` | `{appointment}` updates Google event |
-| DELETE | /appointments/:id | crm.edit | - | `{appointment}` status cancelled |
-
-## Integrations and sync history
-
-Providers: `stripe`, `discord`, `google_calendar`. Secrets are encrypted per workspace and never returned; responses carry only a masked last four.
-
-| Method | Path | Perm | Request | Response |
-|---|---|---|---|---|
-| GET | /integrations | integrations.manage or audit.view | - | `{items:[{provider,label,status:"not_connected"\|"connected"\|"error",lastOkAt,lastErrorAt,lastError,secretMasked,recentErrors:[{type,message,at}],limits:{summary,can[],cannot[]},perUser}]}` |
-| POST | /integrations/stripe/connect | integrations.manage | `{secretKey:"sk_test_..."}` | `201 {provider,status,secretMasked}`; verifies the key, creates the webhook endpoint for `PUBLIC_API_URL/webhooks/stripe/:workspaceId`, stores the signing secret encrypted; live keys refused |
-| POST | /integrations/discord/connect | integrations.manage | `{botToken,guildId?,channelId?}` | `201 {provider,status,secretMasked}` |
-| POST | /integrations/google_calendar/connect | integrations.manage | `{}` | `201 {authUrl,state}` per-employee OAuth consent URL |
-| POST | /integrations/:provider/test | integrations.manage | - | `{ok:true}` or `{ok:false,error:{code,message,temporary}}` |
-| DELETE | /integrations/:provider | integrations.manage | - | `204` removes the secret and, for Stripe, the remote webhook endpoint (audited) |
-| GET | /integrations/:provider/events | integrations.manage or audit.view | `?limit&cursor` | `{items:[{id,direction,provider,type,externalId,result,httpStatus,error,ref,createdAt}],nextCursor}` |
-
-Connect failures: `422` for permanent problems (plain message, for example "The provider rejected the credentials"), `503` for temporary ones (network, 5xx, 429 are retried with backoff first).
+Discord interactions: `POST /webhooks/discord/:workspaceId` (Ed25519 signature with the workspace public key; forged requests get `401` and are recorded; duplicate interaction ids are ignored). Customer server: `/enquire` (modal: name, phone, need) and `/stop` (opt out). Staff server: `/link code:<code>`. Inbound DMs arrive over the gateway and are deduplicated by Discord message id, with a backfill on every reconnect.
 
 ## Payments
 

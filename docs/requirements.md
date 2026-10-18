@@ -39,15 +39,15 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | I2 | Payments | Saad | todo |
 | I3 | Calendar | Saad | todo |
 | I4 | Notifications (choose one) | Saad | todo |
-| I1.1 | Receive messages | Saad | todo |
-| I1.2 | Request authenticity | Saad | in progress |
-| I1.3 | Send messages | Saad | todo |
-| I1.4 | Delivery status | Saad | todo |
-| I1.5 | Contact matching | Saad | todo |
-| I1.6 | Ownership | Saad | todo |
-| I1.7 | Failure handling | Saad | todo |
-| I1.8 | Duplicates | Saad | todo |
-| I1.9 | Opt-out | Saad | todo |
+| I1.1 | Receive messages | Saad | done |
+| I1.2 | Request authenticity | Saad | done |
+| I1.3 | Send messages | Saad | done |
+| I1.4 | Delivery status | Saad | done |
+| I1.5 | Contact matching | Saad | done |
+| I1.6 | Ownership | Saad | done |
+| I1.7 | Failure handling | Saad | done |
+| I1.8 | Duplicates | Saad | done |
+| I1.9 | Opt-out | Saad | done |
 | I2.1 | Create a payment request | Saad | done |
 | I2.2 | Payment confirmation by webhook | Saad | done |
 | I2.3 | Request authenticity | Saad | done |
@@ -63,10 +63,10 @@ Status: todo, in progress, done. Done means implemented and covered by tests. F2
 | I3.5 | Time zones | Saad | todo |
 | I3.6 | Change and cancel | Saad | todo |
 | I3.7 | Availability link | Saad | todo |
-| I4.1 | Real delivery | Saad | todo |
-| I4.2 | Useful content | Saad | todo |
-| I4.3 | Per-user routing | Saad | todo |
-| I4.4 | Failure handling | Saad | todo |
+| I4.1 | Real delivery | Saad | done |
+| I4.2 | Useful content | Saad | done |
+| I4.3 | Per-user routing | Saad | done |
+| I4.4 | Failure handling | Saad | done |
 | I5.1 | Central integrations page | Saad | done |
 | I5.2 | Per-workspace configuration | Saad | done |
 | I5.3 | Secret handling | Saad | done |

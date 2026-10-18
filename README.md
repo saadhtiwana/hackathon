@@ -55,10 +55,9 @@ The dev branch is seeded with password `Relay-Demo-2026`. Production uses a diff
 
 | Workspace | Email | Role |
 | --------- | ----- | ---- |
-| Margalla Estates | saad@margallaestates.pk | Owner |
-| Margalla Estates | abdullah@margallaestates.pk | Admin |
-| Margalla Estates | hira@margallaestates.pk | Sales Manager (custom role) |
-| Margalla Estates | ahmad@margallaestates.pk | User (values hidden) |
+| Margalla Estates | saadhayat799@gmail.com | Owner |
+| Margalla Estates | abdullahisdev@gmail.com | Admin |
+| Margalla Estates | ahmadmustafabutt.dev@gmail.com | User (values hidden) |
 | Kohsar Solar | sana@kohsarsolar.pk | Owner of a second, isolated workspace |
 
 ### Provider keys

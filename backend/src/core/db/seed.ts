@@ -53,9 +53,9 @@ async function seedMargalla(passwordHash: string) {
     await tx.insert(rolePermissions).values(PERM_SALES_MANAGER.map((permission) => ({ roleId: mgr!.id, workspaceId: ws, permission })));
 
     const team = [
-      { name: 'Saad Hayat', email: 'saad@margallaestates.pk', role: base.owner.id },
-      { name: 'Abdullah Khan', email: 'abdullah@margallaestates.pk', role: base.admin.id },
-      { name: 'Ahmad Mustafa', email: 'ahmad@margallaestates.pk', role: base.user.id },
+      { name: 'Saad Hayat', email: 'saadhayat799@gmail.com', role: base.owner.id },
+      { name: 'Abdullah Khan', email: 'abdullahisdev@gmail.com', role: base.admin.id },
+      { name: 'Ahmad Mustafa', email: 'ahmadmustafabutt.dev@gmail.com', role: base.user.id },
     ];
     const members: Record<string, string> = {};
     for (const t of team) {

@@ -6,17 +6,18 @@ export function Badge({
   className,
 }: {
   children: React.ReactNode;
-  tone?: "neutral" | "ok" | "warn" | "signal";
+  tone?: "neutral" | "ok" | "warn" | "signal" | "accent";
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded-md px-1.5 text-[12px] font-medium tabular-nums",
-        tone === "neutral" && "bg-wash text-muted",
-        tone === "ok" && "bg-[color-mix(in_srgb,var(--ok)_12%,transparent)] text-ok",
-        tone === "warn" && "bg-[color-mix(in_srgb,var(--warn)_14%,transparent)] text-warn",
-        tone === "signal" && "bg-[color-mix(in_srgb,var(--signal)_12%,transparent)] text-signal",
+        "inline-flex h-5 items-center rounded-full px-2 text-[12px] font-medium whitespace-nowrap tabular-nums",
+        tone === "neutral" && "bg-surface-muted text-text-muted",
+        tone === "ok" && "bg-tint-green text-tint-green-text",
+        tone === "warn" && "bg-tint-yellow text-tint-yellow-text",
+        tone === "signal" && "bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] text-danger",
+        tone === "accent" && "bg-accent-soft text-accent-text",
         className,
       )}
     >

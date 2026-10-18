@@ -23,7 +23,7 @@ export function Combobox({
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <PopoverPrimitive.Trigger
         aria-label={label}
-        className="inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-line bg-surface px-3 text-[13px]"
+        className="inline-flex h-9 min-w-40 items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 text-[13px] hover:border-border-strong"
       >
         {current?.label ?? label}
         <ChevronsUpDown className="size-3.5 text-muted" aria-hidden />
@@ -31,7 +31,7 @@ export function Combobox({
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           sideOffset={4}
-          className="z-50 w-56 rounded-lg border border-line bg-surface p-1 shadow-float"
+          className="z-50 w-60 rounded-xl border border-border bg-surface p-1.5 shadow-raised animate-pop-in"
         >
           <Command label={label}>
             <Command.Input
@@ -39,7 +39,7 @@ export function Combobox({
               className="h-9 w-full bg-transparent px-2 text-[13px] outline-none"
             />
             <Command.List>
-              <Command.Empty className="px-2 py-2 text-[13px] text-muted">No matches</Command.Empty>
+              <Command.Empty className="px-2.5 py-2 text-[13px] text-text-muted">No matches</Command.Empty>
               {options.map((option) => (
                 <Command.Item
                   key={option.value}
@@ -48,7 +48,7 @@ export function Combobox({
                     onChange(option.value);
                     setOpen(false);
                   }}
-                  className="flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] data-[selected=true]:bg-wash"
+                  className="flex h-9 cursor-pointer items-center rounded-md px-2.5 text-[13px] data-[selected=true]:bg-surface-hover"
                 >
                   {option.label}
                 </Command.Item>

@@ -21,7 +21,7 @@ export function DropdownMenu({
         <Dropdown.Content
           align="end"
           sideOffset={6}
-          className="z-50 min-w-48 rounded-lg border border-line bg-surface p-1 shadow-float"
+          className="z-50 min-w-52 rounded-xl border border-border bg-surface p-1.5 shadow-raised animate-pop-in"
         >
           {children}
         </Dropdown.Content>
@@ -37,7 +37,7 @@ export function DropdownItem({
   return (
     <Dropdown.Item
       className={cn(
-        "flex h-9 cursor-pointer items-center rounded-sm px-2 text-[13px] outline-none data-[highlighted]:bg-wash",
+        "flex h-9 cursor-pointer items-center rounded-md px-2.5 text-[13px] outline-none data-[highlighted]:bg-surface-hover",
         className,
       )}
       {...props}

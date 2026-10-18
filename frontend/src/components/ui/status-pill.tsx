@@ -4,9 +4,9 @@ import { cn } from "@/lib/cn";
 const tones = {
   ok: { icon: CircleCheck, className: "text-ok" },
   warn: { icon: CircleDashed, className: "text-warn" },
-  signal: { icon: CircleOff, className: "text-signal" },
-  neutral: { icon: Circle, className: "text-muted" },
-  away: { icon: Minus, className: "text-muted" },
+  signal: { icon: CircleOff, className: "text-danger" },
+  neutral: { icon: Circle, className: "text-text-muted" },
+  away: { icon: Minus, className: "text-text-muted" },
 } as const;
 
 export function StatusPill({
@@ -18,8 +18,8 @@ export function StatusPill({
 }) {
   const { icon: Icon, className } = tones[tone];
   return (
-    <span className={cn("inline-flex h-6 items-center gap-1.5 text-[13px]", className)}>
-      <Icon className="size-3.5" aria-hidden />
+    <span className={cn("inline-flex h-6 items-center gap-1.5 text-[13px] font-medium whitespace-nowrap", className)}>
+      <Icon className="size-3.5 shrink-0" aria-hidden />
       <span>{children}</span>
     </span>
   );

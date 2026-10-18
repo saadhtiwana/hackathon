@@ -20,13 +20,13 @@ export function Button({
     <Comp
       type={asChild ? undefined : type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-md border border-transparent font-medium whitespace-nowrap transition-colors disabled:opacity-50",
-        size === "md" ? "h-8 px-3 text-[13px]" : "h-7 px-2.5 text-[12px]",
-        variant === "primary" && "bg-accent text-on-accent hover:bg-accent/90",
-        variant === "dark" && "bg-ink text-paper hover:bg-ink/90",
-        variant === "quiet" && "border-line bg-surface text-ink hover:bg-wash",
-        variant === "signal" && "bg-signal text-on-signal hover:bg-signal/90",
-        variant === "ghost" && "bg-transparent text-muted hover:bg-wash hover:text-ink",
+        "inline-flex items-center justify-center gap-2 rounded-md border border-transparent font-medium whitespace-nowrap select-none active:translate-y-px disabled:pointer-events-none disabled:opacity-50",
+        size === "md" ? "h-9 px-3.5 text-[13px]" : "h-8 px-3 text-[12px]",
+        variant === "primary" && "bg-accent text-on-accent hover:bg-accent-hover",
+        variant === "dark" && "bg-text text-canvas hover:opacity-90",
+        variant === "quiet" && "border-border bg-surface text-text hover:border-border-strong hover:bg-surface-hover",
+        variant === "signal" && "bg-danger text-on-danger hover:opacity-90",
+        variant === "ghost" && "bg-transparent text-text-muted hover:bg-surface-hover hover:text-text",
         className,
       )}
       {...props}

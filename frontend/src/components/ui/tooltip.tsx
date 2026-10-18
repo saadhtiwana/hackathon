@@ -17,7 +17,7 @@ export function Tooltip({
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content
           sideOffset={6}
-          className="z-50 rounded-md border border-line bg-ink px-2 py-1 text-[12px] text-paper"
+          className="z-50 rounded-md bg-text px-2 py-1 text-[12px] text-canvas animate-fade-in"
         >
           {content}
         </TooltipPrimitive.Content>

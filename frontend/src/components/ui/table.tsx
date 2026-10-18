@@ -60,17 +60,18 @@ export function Table<T>({
   }
 
   return (
-    <div className="overflow-x-auto rounded-md border border-line">
+    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] border-collapse text-left">
         <caption className="sr-only">{caption}</caption>
-        <thead className="sticky top-0 bg-paper">
-          <tr className="h-9 border-b border-line text-[12px] text-muted">
+        <thead className="bg-surface">
+          <tr className="h-10 border-b border-border text-[12px] text-text-muted">
             {columns.map((column) => (
-              <th key={column.key} scope="col" className={cn("px-3 font-medium", column.align === "right" && "text-right")}>
+              <th key={column.key} scope="col" className={cn("px-4 font-medium whitespace-nowrap first:pl-5 last:pr-5", column.align === "right" && "text-right")}>
                 {column.sortValue ? (
                   <button
                     type="button"
-                    className="uppercase tracking-wide"
+                    className="rounded-sm hover:text-text"
                     onClick={() => {
                       if (sortKey === column.key) setDirection((value) => (value === "asc" ? "desc" : "asc"));
                       else {
@@ -83,7 +84,7 @@ export function Table<T>({
                     {sortKey === column.key ? (direction === "asc" ? " ↑" : " ↓") : ""}
                   </button>
                 ) : (
-                  <span className="uppercase tracking-wide">{column.header}</span>
+                  <span>{column.header}</span>
                 )}
               </th>
             ))}
@@ -93,10 +94,10 @@ export function Table<T>({
           {visible.map((row, index) => (
             <tr
               key={rowKey(row)}
-              className={cn("h-9 border-b border-line last:border-b-0", index === active && "bg-surface")}
+              className={cn("h-12 border-b border-border animate-row-in last:border-b-0 hover:bg-surface-hover", index === active && "bg-surface-muted")}
             >
               {columns.map((column) => (
-                <td key={column.key} className={cn("px-3 text-[13px]", column.align === "right" && "text-right")}>
+                <td key={column.key} className={cn("px-4 text-[13px] first:pl-5 last:pr-5", column.align === "right" && "text-right")}>
                   {column.render(row)}
                 </td>
               ))}
@@ -104,8 +105,9 @@ export function Table<T>({
           ))}
         </tbody>
       </table>
-      <div className="flex h-9 items-center justify-between border-t border-line px-3 text-[12px] text-muted">
-        <span className="font-mono tabular-nums">
+      </div>
+      <div className="flex h-10 items-center justify-between border-t border-border px-5 text-[12px] text-text-muted">
+        <span className="tabular-nums">
           {safePage + 1} / {pages}
         </span>
         <span className="flex gap-1">

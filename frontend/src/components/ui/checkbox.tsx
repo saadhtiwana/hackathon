@@ -11,7 +11,7 @@ export function Checkbox({
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        "flex size-4 items-center justify-center rounded-sm border border-line bg-surface data-[state=checked]:border-ink data-[state=checked]:bg-ink data-[state=checked]:text-paper",
+        "flex size-4 items-center justify-center rounded-[5px] border border-border-strong bg-surface data-[state=checked]:border-accent data-[state=checked]:bg-accent data-[state=checked]:text-on-accent",
         className,
       )}
       {...props}

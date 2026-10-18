@@ -11,7 +11,7 @@ import { useAcknowledge, useLeads } from "@/features/leads/api";
 import { SourceLabel } from "@/features/leads/components/labels";
 import { CardState, DashCard } from "./dash-card";
 
-const tints = ["bg-tint-yellow", "bg-tint-blue", "bg-tint-pink", "bg-tint-green", "bg-tint-violet"];
+const tints = ["bg-surface-muted"];
 
 export function MyLeads() {
   const me = useMe();
@@ -25,7 +25,7 @@ export function MyLeads() {
     <DashCard title="My leads" href="/leads">
       <CardState query={leads} height="h-72">
         {rows.length === 0 ? (
-          <p className="rounded-2xl bg-tint-green p-4 text-[13px] text-tint-green-text">Nothing waiting on you. New leads land here with their countdown.</p>
+          <p className="rounded-xl bg-surface-muted p-4 text-[13px] text-text-muted">Nothing waiting on you. New leads land here with their countdown.</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {rows.map((l, i) => (

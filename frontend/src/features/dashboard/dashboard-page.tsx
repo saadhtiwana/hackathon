@@ -54,7 +54,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="dash -mx-4 -my-7 min-h-full bg-[var(--dash-canvas)] px-4 py-6 sm:-mx-6 sm:px-6 lg:-mx-10 lg:-my-9 lg:rounded-[28px] lg:px-8 lg:py-8">
+    <div className="dash">
       <header className="mb-7 flex flex-col gap-5">
         <div className="grid items-center gap-3 lg:grid-cols-[1fr_auto_1fr]">
           <p className="text-[13px] text-text-muted">
@@ -73,7 +73,7 @@ export function DashboardPage() {
             <DropdownMenu
               label="Customize dashboard"
               trigger={
-                <button type="button" className="inline-flex h-10 items-center gap-2 rounded-full border border-border bg-[var(--dash-card)] px-4 text-[13px] font-medium hover:border-border-strong">
+                <button type="button" className="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-[var(--dash-card)] px-3 text-[13px] font-medium hover:bg-surface-hover">
                   <SlidersHorizontal className="size-4" aria-hidden />
                   Customize
                 </button>
@@ -98,7 +98,7 @@ export function DashboardPage() {
               ))}
             </DropdownMenu>
             {me.data ? (
-              <span className="hidden items-center gap-2.5 rounded-full border border-border bg-[var(--dash-card)] py-1 pr-4 pl-1 lg:inline-flex">
+              <span className="hidden items-center gap-2.5 py-1 pr-2 pl-1 lg:inline-flex">
                 <Avatar name={me.data.user.name} id={me.data.user.id} size="md" status={me.data.availability} />
                 <span className="leading-tight">
                   <span className="block text-[13px] font-semibold">{me.data.user.name}</span>
@@ -109,13 +109,13 @@ export function DashboardPage() {
           </div>
         </div>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <h1 className="text-[30px] leading-tight font-semibold tracking-tight sm:text-[36px]">
+          <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.02em] sm:text-[34px]">
             {greeting(now)}
             {first ? `, ${first}` : ""}
           </h1>
           <form
             role="search"
-            className="flex h-12 w-full items-center gap-2.5 rounded-full border border-border bg-[var(--dash-card)] px-5 lg:w-[340px]"
+            className="flex h-10 w-full items-center gap-2.5 rounded-lg border border-transparent bg-surface-muted px-3.5 focus-within:border-border-strong focus-within:bg-surface lg:w-[340px]"
             onSubmit={(e) => {
               e.preventDefault();
               if (q.trim()) router.push(`/contacts?q=${encodeURIComponent(q.trim())}`);

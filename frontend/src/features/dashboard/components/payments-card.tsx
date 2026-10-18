@@ -44,12 +44,12 @@ export function PaymentsCard({ range }: { range: Range }) {
     <DashCard title="Payments" href="/payments">
       <CardState query={figures} height="h-64">
         <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4">
-          <div className="min-w-0 rounded-2xl bg-tint-green p-4 text-tint-green-text">
+          <div className="min-w-0 rounded-xl bg-surface-muted p-4">
             <p className="text-[12px] font-medium">Collected this month</p>
             <p className="mt-1 truncate text-[22px] leading-tight font-semibold tracking-tight tabular-nums sm:text-[28px]">{big(d?.collectedThisMonthCents ?? 0)}</p>
             <p className="text-[11px] opacity-80">Paid and confirmed, minus refunds</p>
           </div>
-          <div className="min-w-0 rounded-2xl bg-accent-soft p-4 text-accent-text">
+          <div className="min-w-0 rounded-xl bg-surface-muted p-4">
             <p className="text-[12px] font-medium">Projected</p>
             <p className="mt-1 truncate text-[22px] leading-tight font-semibold tracking-tight tabular-nums sm:text-[28px]">{big(d?.projectedCents)}</p>
             <p className="text-[11px] opacity-80">{d?.projectedCents == null ? "Company view with values only" : "Open pipeline plus open requests"}</p>

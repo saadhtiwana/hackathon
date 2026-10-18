@@ -21,10 +21,10 @@ export function DashCard({
   return (
     <section
       aria-label={title}
-      className={cn("flex min-w-0 flex-col rounded-[22px] bg-[var(--dash-card)] p-5 shadow-[var(--dash-shadow)] animate-fade-in sm:p-6", className)}
+      className={cn("flex min-w-0 flex-col rounded-2xl border border-border bg-[var(--dash-card)] p-5 animate-fade-in", className)}
     >
       <header className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-[16px] font-semibold tracking-tight">{title}</h2>
+        <h2 className="text-[13px] font-medium text-text-muted">{title}</h2>
         <span className="flex items-center gap-2">
           {action}
           {href ? <CornerLink href={href} label={`Open ${title}`} /> : null}
@@ -41,7 +41,7 @@ export function CornerLink({ href, label }: { href: string; label: string }) {
       href={href}
       aria-label={label}
       title={label}
-      className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-[var(--dash-card)] text-text-muted hover:border-border-strong hover:text-text"
+      className="inline-flex size-7 items-center justify-center rounded-md text-text-muted hover:bg-surface-hover hover:text-text"
     >
       <ArrowUpRight className="size-4" aria-hidden />
     </Link>
@@ -49,7 +49,7 @@ export function CornerLink({ href, label }: { href: string; label: string }) {
 }
 
 export function RoundButton({ label, onClick, children, href }: { label: string; onClick?: () => void; children: React.ReactNode; href?: string }) {
-  const cls = "inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-[var(--dash-card)] text-text-muted hover:border-border-strong hover:text-text";
+  const cls = "inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-text-muted hover:bg-surface-hover hover:text-text";
   return href ? (
     <Link href={href} aria-label={label} title={label} className={cls}>
       {children}
@@ -77,7 +77,7 @@ export function CardState({ query, height = "h-40", children }: { query: { isLoa
 
 export function Segmented<T extends string>({ value, onChange, options, label }: { value: T; onChange: (v: T) => void; options: { value: T; label: string }[]; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-full border border-border bg-[var(--dash-card)] p-1">
+    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg bg-surface-muted p-0.5">
       {options.map((o) => (
         <button
           key={o.value}
@@ -86,8 +86,8 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
           aria-checked={value === o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            "h-8 rounded-full px-4 text-[13px] font-medium whitespace-nowrap",
-            value === o.value ? "bg-text text-canvas" : "text-text-muted hover:text-text",
+            "h-8 rounded-md px-3.5 text-[13px] font-medium whitespace-nowrap",
+            value === o.value ? "bg-surface text-text shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-text-muted hover:text-text",
           )}
         >
           {o.label}

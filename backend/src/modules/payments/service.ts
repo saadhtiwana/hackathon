@@ -118,6 +118,17 @@ export async function applyTransition(ws: string, paymentId: string, change: Cha
     const [next] = await tx.update(payments).set({ ...patch, updatedAt: new Date() }).where(eq(payments.id, p.id)).returning();
     await audit.record(tx, { workspaceId: ws, actorId, action: `payment.${next!.status}`, targetType: 'payment', targetId: p.id, before: { status: p.status, refundedCents: p.refundedCents }, after: { status: next!.status, refundedCents: next!.refundedCents, reason: next!.failureReason } });
     await activity.record(tx, { workspaceId: ws, entity: { contactId: p.contactId, opportunityId: p.opportunityId }, type: 'payment', actorId, data: { paymentId: p.id, status: next!.status, amountCents: p.amountCents, refundedCents: next!.refundedCents, currency: p.currency, reason: next!.failureReason } });
+    // A paid deal leaves the open pipeline: move its opportunity to the Won stage.
+    if (change.kind === 'paid' && next!.opportunityId) {
+      const [opp] = await tx.select().from(opportunities).where(eq(opportunities.id, next!.opportunityId));
+      const [cur] = opp ? await tx.select().from(stages).where(eq(stages.id, opp.stageId)) : [];
+      const [won] = opp ? await tx.select().from(stages).where(and(eq(stages.pipelineId, opp.pipelineId), eq(stages.isWon, true))).orderBy(asc(stages.position)).limit(1) : [];
+      if (opp && won && cur && !cur.isWon && !cur.isLost) {
+        await tx.update(opportunities).set({ stageId: won.id, version: sql`${opportunities.version} + 1`, updatedAt: new Date() }).where(eq(opportunities.id, opp.id));
+        await audit.record(tx, { workspaceId: ws, actorId, action: 'opportunity.stage_changed', targetType: 'opportunity', targetId: opp.id, before: { stageId: cur.id, stage: cur.name }, after: { stageId: won.id, stage: won.name, reason: 'payment received' } });
+        await activity.record(tx, { workspaceId: ws, entity: { contactId: p.contactId, opportunityId: opp.id }, type: 'stage_change', actorId, data: { from: cur.name, to: won.name, fromId: cur.id, toId: won.id, reason: 'payment received' } });
+      }
+    }
     return next!;
   });
   if (out && out.requestedBy && out !== undefined && ['paid', 'failed', 'expired', 'refunded', 'partially_refunded'].includes(out.status)) await notify(db, { workspaceId: ws, userId: out.requestedBy, kind: `payment_${out.status}`, title: `Payment ${out.status.replace('_', ' ')}: ${(out.amountCents / 100).toLocaleString('en-US')} ${out.currency}`, href: out.opportunityId ? `/opportunities/${out.opportunityId}` : '/payments' });

@@ -124,11 +124,11 @@ export function Pill({ children, bg, fg, size = 18, style }: { children: ReactNo
 }
 
 // Acknowledgement countdown ring, like the one in the leads table. left = 0..1 of the window remaining.
-export function Ring({ size, left, label, stroke = 10 }: { size: number; left: number; label: string; stroke?: number }) {
+export function Ring({ size, left, label, stroke = 10, tone }: { size: number; left: number; label: string; stroke?: number; tone?: string }) {
   const r = (size - stroke) / 2;
   const len = 2 * Math.PI * r;
   const urgent = left <= 0.34;
-  const color = urgent ? c.red : c.ink;
+  const color = tone ?? (urgent ? c.red : c.ink);
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>

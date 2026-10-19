@@ -104,7 +104,7 @@ export async function revokeToken(token: string) {
   await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(token)}`, { method: 'POST', signal: AbortSignal.timeout(10_000) }).catch(() => {});
 }
 
-// ahmad@gmail.com + workspace slug "margalla-estates" -> ahmad+margalla@gmail.com
+// you@gmail.com + workspace slug "margalla-estates" -> you+margalla-estates@gmail.com
 export function agencyAddressFor(mailbox: string, workspaceSlug: string): string {
   const [local, domain] = mailbox.toLowerCase().split('@');
   const tag = (workspaceSlug.split('-')[0] || 'agency').replace(/[^a-z0-9]/g, '');

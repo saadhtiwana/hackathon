@@ -32,7 +32,8 @@ async function ensureUser(tx: Tx, name: string, email: string, passwordHash: str
 const phones = new Set<string>();
 function phone() {
   for (;;) {
-    const p = `+92${pick(['300', '301', '321', '333', '345', '312', '313'])}${String(int(1000000, 9999999))}`;
+    // Obviously fake numbers (+92 3xx 000xxxx) so a seed never points at a real person.
+    const p = `+92${pick(['300', '301', '321', '333', '345', '312', '313'])}000${String(int(1000, 9999))}`;
     if (!phones.has(p)) {
       phones.add(p);
       return p;
@@ -53,9 +54,9 @@ async function seedMargalla(passwordHash: string) {
     await tx.insert(rolePermissions).values(PERM_SALES_MANAGER.map((permission) => ({ roleId: mgr!.id, workspaceId: ws, permission })));
 
     const team = [
-      { name: 'Saad Hayat', email: 'saadhayat799@gmail.com', role: base.owner.id },
-      { name: 'Abdullah Khan', email: 'abdullahisdev@gmail.com', role: base.admin.id },
-      { name: 'Ahmad Mustafa', email: 'ahmadmustafabutt.dev@gmail.com', role: base.user.id },
+      { name: 'Malik Saad Hayat', email: 'saad@example.com', role: base.owner.id },
+      { name: 'Muhammad Abdullah', email: 'abdullah@example.com', role: base.admin.id },
+      { name: 'Ahmed Butt', email: 'ahmed@example.com', role: base.user.id },
     ];
     const members: Record<string, string> = {};
     for (const t of team) {
@@ -64,7 +65,7 @@ async function seedMargalla(passwordHash: string) {
       members[t.email.split('@')[0]!] = u.id;
     }
     // The demo team is exactly three people; all start Available with their own alert address.
-    const alertEmails: Record<string, string> = { saad: 'saadhayat799@gmail.com', abdullah: 'abdullahisdev@gmail.com', ahmad: 'ahmadmustafabutt.dev@gmail.com' };
+    const alertEmails: Record<string, string> = { saad: 'saad@example.com', abdullah: 'abdullah@example.com', ahmad: 'ahmed@example.com' };
     for (const [k, mail] of Object.entries(alertEmails)) await tx.update(memberships).set({ alertEmail: mail }).where(eq(memberships.userId, members[k]!));
     const staff = ['saad', 'abdullah', 'ahmad'].map((k) => members[k]!);
 
@@ -128,7 +129,7 @@ async function seedMargalla(passwordHash: string) {
         workspaceId: ws,
         name: `${first} ${last}`,
         phone: phone(),
-        email: rnd() < 0.55 ? `${first}.${last}${int(1, 99)}@${pick(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'])}`.toLowerCase() : null,
+        email: rnd() < 0.55 ? `${first}.${last}${int(1, 99)}@${pick(['example.com', 'example.org', 'example.net'])}`.toLowerCase() : null,
         companyId: rnd() < 0.2 ? pick(companyRows).id : null,
         ownerId: pick(staff),
         custom: { [cnic.id]: rnd() < 0.4 },
@@ -182,7 +183,7 @@ async function seedKohsar(passwordHash: string) {
     const { workspace, roles: base } = await createWorkspace(tx, { name: 'Kohsar Solar', slug: 'kohsar-solar', timezone: 'Asia/Karachi', currency: 'PKR' });
     const ws = workspace.id;
     const people = [
-      { name: 'Sana Ahmed', email: 'sana@kohsarsolar.pk', role: base.owner.id },
+      { name: 'Sana Ahmed', email: 'sana@example.org', role: base.owner.id },
     ];
     const ids: string[] = [];
     for (const p of people) {

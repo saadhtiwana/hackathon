@@ -1,7 +1,8 @@
-# Secrets
-.env
-.env.*
-!.env.example
+# Secrets: real env files and anything in .secrets never get committed; .env.example files do
+.secrets/
+**/.env
+**/.env.*
+!**/.env.example
 *.pem
 *.key
 
@@ -48,14 +49,13 @@ bin/
 .vscode/
 *.swp
 
-# Local tooling
-CLAUDE.md
-.claude/
-.cursor/
-.secrets/
-
 # launch video: renders, and screenshots of the live app (they show people's names and data)
 /video/out/
 /video/public/shots/
 /video/public/audio/
+/video/public/music.mp3
 /video/node_modules/
+
+# rendered video stays out of git except media used by the docs
+*.mp4
+!docs/media/*.mp4

@@ -207,7 +207,7 @@ describe('availability and deactivation', () => {
 
 describe('core helpers', () => {
   it('round-trips AES-GCM and masks secrets (I5.3)', () => {
-    const s = 'sk_test_1234567890abcd';
+    const s = 'sk_test_xxxxxxxxxxabcd';
     const enc = encrypt(s);
     expect(enc).not.toContain(s);
     expect(decrypt(enc)).toBe(s);

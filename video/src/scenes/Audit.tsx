@@ -6,12 +6,12 @@ import { Words } from "../ui/Words";
 
 const rows = [
   { at: "14:02:09", who: "System", tone: 4, what: "Lead created from email", tag: "lead.created" },
-  { at: "14:02:10", who: "Sara Ahmed", tone: 1, what: "Assigned by rotation", tag: "lead.assigned" },
-  { at: "14:02:40", who: "System", tone: 4, what: "Escalated, window expired", tag: "lead.escalated" },
+  { at: "14:02:10", who: "Ahmed Butt", tone: 1, what: "Assigned by rotation", tag: "lead.assigned" },
+  { at: "14:02:40", who: "System", tone: 4, what: "Escalated to Muhammad Abdullah", tag: "lead.escalated" },
   { at: "14:03:10", who: "System", tone: 4, what: "Escalated to manager", tag: "lead.escalated" },
-  { at: "14:03:16", who: "Imran Qureshi", tone: 3, what: "Acknowledged lead", tag: "lead.acknowledged" },
-  { at: "14:04:02", who: "Imran Qureshi", tone: 3, what: "Booked viewing, Thu 4 pm", tag: "appointment.booked" },
-  { at: "14:04:30", who: "Imran Qureshi", tone: 3, what: "Requested PKR 50,000", tag: "payment.requested" },
+  { at: "14:03:16", who: "Malik Saad Hayat", tone: 3, what: "Acknowledged lead", tag: "lead.acknowledged" },
+  { at: "14:04:02", who: "Malik Saad Hayat", tone: 3, what: "Booked viewing, Thu 4 pm", tag: "appointment.booked" },
+  { at: "14:04:30", who: "Muhammad Abdullah", tone: 2, what: "Requested PKR 50,000", tag: "payment.requested" },
   { at: "14:06:51", who: "Stripe", tone: 2, what: "Payment succeeded", tag: "payment.paid" },
 ];
 

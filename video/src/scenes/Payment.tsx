@@ -26,7 +26,7 @@ export function Payment() {
     <AbsoluteFill>
       <Frame radius={22} style={{ ...dialog, padding: 34, opacity: prog(frame, 0, 10), transform: `translateY(${(1 - prog(frame, 0, 10)) * 30}px)` }}>
         <div style={{ fontSize: 28, fontWeight: 600, letterSpacing: "-0.02em" }}>Request payment</div>
-        <div style={{ fontSize: 19, color: c.muted, marginTop: 4 }}>Hamza Raza gets a secure Stripe link by email.</div>
+        <div style={{ fontSize: 19, color: c.muted, marginTop: 4 }}>Muhammad Abdullah is requesting · Hamza Raza gets a Stripe link</div>
         <div style={{ display: "flex", gap: 16, marginTop: 24 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 17, color: c.muted, marginBottom: 8 }}>Amount</div>

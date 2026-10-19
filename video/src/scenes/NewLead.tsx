@@ -59,9 +59,11 @@ export function NewLead() {
             <div style={{ fontSize: 26, fontWeight: 600 }}>Hamza Raza</div>
             <div style={{ fontSize: 20, color: c.muted, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Viewing for the 3-bed in DHA Phase 2</div>
           </div>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 20, color: c.muted }}>
-            <Icon name="mail" size={20} /> Email
-          </span>
+          {sq ? null : (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 20, color: c.muted }}>
+              <Icon name="mail" size={20} /> Email
+            </span>
+          )}
           {out ? (
             <Pill bg={c.red} fg="#fff" size={19}>
               Escalating
@@ -71,11 +73,9 @@ export function NewLead() {
               Waiting for ack
             </Pill>
           )}
-          {sq ? null : (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: 20 }}>
-              <Avatar name="Sara Ahmed" size={36} tone={1} dot="#22A55B" /> Sara Ahmed
-            </span>
-          )}
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 12, fontSize: 20, whiteSpace: "nowrap" }}>
+            <Avatar name="Ahmed Butt" size={36} tone={1} dot="#22A55B" /> Ahmed Butt
+          </span>
           <Ring size={ring} stroke={7} left={secs / 30} label={`0:${String(secs).padStart(2, "0")}`} />
         </Frame>
       </div>

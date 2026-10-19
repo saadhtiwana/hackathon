@@ -202,25 +202,31 @@ export function Cursor({ path, clicks = [] }: { path: Point[]; clicks?: number[]
   );
 }
 
-// Animated Relay mark. t: 0 → 1 slides the paper baton in, the red one arrives and takes the handoff.
+// The current Relay mark (public/brand/relay-mark.png, the file the app and README use), never redrawn.
+// The reveal splits that one image into three clipped layers so it can build as a handoff:
+// t: 0 → 1 brings in the first stroke, the second takes over from it, then the dot lands.
+const MARK = staticFile("brand/relay-mark.png");
+const parts = [
+  "polygon(0% 0%, 73.2% 0%, 73.2% 34.2%, 32.2% 34.2%, 32.2% 100%, 0% 100%)",
+  "polygon(32.2% 34.2%, 100% 34.2%, 100% 100%, 32.2% 100%)",
+  "circle(10.6% at 84.4% 23.8%)",
+];
+
 export function LogoMark({ size, t = 1, tileT = 1 }: { size: number; t?: number; tileT?: number }) {
   const a = Math.min(1, t * 1.6);
   const b = Math.max(0, Math.min(1, (t - 0.3) / 0.7));
+  const d = Math.max(0, Math.min(1, (t - 0.75) / 0.25));
+  const layer = [
+    { opacity: a, transform: `translateY(${(1 - a) * 22}%)` },
+    { opacity: b, transform: `translateX(${(1 - b) * -26}%)` },
+    { opacity: d, transform: `scale(${0.4 + 0.6 * d})`, transformOrigin: "84.4% 23.8%" },
+  ];
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" style={{ transform: `scale(${0.7 + 0.3 * tileT})`, opacity: tileT }}>
-      <defs>
-        <clipPath id="tile">
-          <rect width="64" height="64" rx="15" />
-        </clipPath>
-      </defs>
-      <rect width="64" height="64" rx="15" fill={c.ink} />
-      <g clipPath="url(#tile)">
-        <g transform="rotate(-45 32 32)">
-          <rect x={4 - (1 - a) * 60} y="25" width="33" height="14" rx="7" fill="#FFFDF8" />
-          <rect x={27 - (1 - b) * 20} y="25" width="33" height="14" rx="7" fill={c.red} stroke={c.ink} strokeWidth="2.5" opacity={b > 0 ? 1 : 0} />
-        </g>
-      </g>
-    </svg>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0, transform: `scale(${0.7 + 0.3 * tileT})`, opacity: tileT }}>
+      {parts.map((clip, i) => (
+        <Img key={i} src={MARK} style={{ position: "absolute", inset: 0, width: size, height: size, clipPath: clip, ...layer[i] }} />
+      ))}
+    </div>
   );
 }
 

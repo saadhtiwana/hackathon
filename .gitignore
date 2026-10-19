@@ -57,4 +57,5 @@ CLAUDE.md
 # launch video: renders, and screenshots of the live app (they show people's names and data)
 /video/out/
 /video/public/shots/
+/video/public/audio/
 /video/node_modules/

@@ -24,6 +24,9 @@ export function Closing() {
         <Mono size={34} color={c.ink} style={{ marginTop: 44, opacity: url, transform: `translateY(${(1 - url) * 12}px)` }}>
           relay-nascon.vercel.app
         </Mono>
+        <div style={{ marginTop: 28, fontSize: 26, color: c.muted, textAlign: "center", padding: "0 60px", opacity: prog(frame, 110, 120) }}>
+          Built by Muhammad Abdullah, Ahmed Butt and Malik Saad Hayat
+        </div>
       </AbsoluteFill>
     );
   }

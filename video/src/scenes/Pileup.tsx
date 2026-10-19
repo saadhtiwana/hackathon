@@ -6,10 +6,10 @@ import { prog } from "../ui/motion";
 import { Words } from "../ui/Words";
 
 const pings: { icon: IconName; source: string; who: string; text: string; ago: string }[] = [
-  { icon: "message", source: "WhatsApp", who: "Ayesha Khan", text: "Is the F-7 flat still available?", ago: "2h" },
+  { icon: "message", source: "WhatsApp", who: "Zainab Noor", text: "Is the F-7 flat still available?", ago: "2h" },
   { icon: "mail", source: "Email", who: "Hamza Raza", text: "Viewing for the 3-bed in DHA?", ago: "1h" },
-  { icon: "globe", source: "Web form", who: "Bilal Ahmed", text: "Need a quote for two units", ago: "52m" },
-  { icon: "message", source: "WhatsApp", who: "Sana Malik", text: "Hello? Anyone there?", ago: "40m" },
+  { icon: "globe", source: "Web form", who: "Fahad Mir", text: "Need a quote for two units", ago: "52m" },
+  { icon: "message", source: "WhatsApp", who: "Sana Javed", text: "Hello? Anyone there?", ago: "40m" },
   { icon: "mail", source: "Email", who: "Omar Farooq", text: "Following up on my enquiry", ago: "31m" },
   { icon: "globe", source: "Web form", who: "Zara Iqbal", text: "Can someone call me back", ago: "18m" },
   { icon: "message", source: "Discord", who: "Ali Hassan", text: "Still waiting on pricing", ago: "6m" },

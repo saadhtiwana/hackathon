@@ -5,15 +5,15 @@ import { Icon } from "../ui/icons";
 import { easeInOut, mix, prog } from "../ui/motion";
 
 const people = [
-  { name: "Sara Ahmed", role: "Agent", tone: 1 },
-  { name: "Usman Tariq", role: "Agent", tone: 2 },
-  { name: "Imran Qureshi", role: "Manager", tone: 3 },
+  { name: "Ahmed Butt", role: "Agent", tone: 1 },
+  { name: "Muhammad Abdullah", role: "Agent", tone: 2 },
+  { name: "Malik Saad Hayat", role: "Manager", tone: 3 },
 ];
 
 const chain = [
-  { title: "Assigned to Sara Ahmed", note: "first in rotation", at: "14:02:10" },
-  { title: "Escalated to Usman Tariq", note: "level 1 · window expired", at: "14:02:40" },
-  { title: "Escalated to Imran Qureshi", note: "level 2 · manager", at: "14:03:10" },
+  { title: "Assigned to Ahmed Butt", note: "first in rotation", at: "14:02:10" },
+  { title: "Escalated to Muhammad Abdullah", note: "level 1 · window expired", at: "14:02:40" },
+  { title: "Escalated to Malik Saad Hayat", note: "level 2 · manager", at: "14:03:10" },
 ];
 
 // 15–21s: the lead moves hand to hand while the custody chain writes itself.
@@ -69,7 +69,7 @@ export function Handoff() {
         const t = prog(frame, i * 6, i * 6 + 14);
         const passed = i < holder;
         return (
-          <div key={p.name} style={{ position: "absolute", left: cx(i) - 100, top: ay, width: 200, display: "flex", flexDirection: "column", alignItems: "center", opacity: t, transform: `scale(${0.9 + 0.1 * t})` }}>
+          <div key={p.name} style={{ position: "absolute", left: cx(i) - 140, top: ay, width: 280, whiteSpace: "nowrap", display: "flex", flexDirection: "column", alignItems: "center", opacity: t, transform: `scale(${0.9 + 0.1 * t})` }}>
             <Avatar name={p.name} size={100} tone={p.tone} ring={i === holder ? c.ink : undefined} />
             <div style={{ fontSize: 22, fontWeight: 600, marginTop: 14 }}>{p.name}</div>
             <div style={{ fontSize: 18, color: c.muted }}>{p.role}</div>
@@ -113,7 +113,7 @@ export function Handoff() {
         radius={22}
         style={{
           left: sq ? x0 + inner - 640 : x0 + inner - 640,
-          top: sq ? 640 : 610,
+          top: sq ? 730 : 610,
           width: 640,
           padding: "26px 30px",
           opacity: mailIn,
@@ -125,7 +125,7 @@ export function Handoff() {
             <Icon name="mail" size={22} color={c.red} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 18, color: c.muted }}>To Imran Qureshi · via Gmail</div>
+            <div style={{ fontSize: 18, color: c.muted }}>To Malik Saad Hayat · via Gmail</div>
             <div style={{ fontSize: 23, fontWeight: 600 }}>Escalated to you: Hamza Raza</div>
           </div>
           <Mono size={17}>now</Mono>

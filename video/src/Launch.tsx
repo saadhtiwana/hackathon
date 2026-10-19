@@ -25,7 +25,20 @@ const scenes = [
 
 export const TOTAL = 1200;
 
-const music = getStaticFiles().some((f) => f.name === "music.mp3");
+const files = new Set(getStaticFiles().map((f) => f.name));
+// A supplied track wins; otherwise the bed synthesised by scripts/sounds.mjs.
+const music = files.has("music.mp3") ? "music.mp3" : files.has("audio/music-bed.wav") ? "audio/music-bed.wav" : null;
+
+// UI sounds, by absolute frame. Whooshes start a few frames early so they peak on the cut.
+const cuts = [90, 180, 270, 450, 630, 780, 930, 1050, 1146];
+const cues: [string, number, number][] = [
+  ...cuts.map((f): [string, number, number] => ["whoosh", f - 8, 0.45]),
+  ["tick", 438, 0.7],
+  ["click", 660, 0.6],
+  ["click", 802, 0.6],
+  ["click", 824, 0.6],
+  ["chime", 851, 0.5],
+];
 
 export function Launch() {
   return (
@@ -37,10 +50,17 @@ export function Launch() {
       ))}
       {music ? (
         <Audio
-          src={staticFile("music.mp3")}
-          volume={(f) => interpolate(f, [0, 30, TOTAL - 45, TOTAL], [0, 0.9, 0.9, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}
+          src={staticFile(music)}
+          volume={(f) => interpolate(f, [0, 30, TOTAL - 60, TOTAL], [0, 0.18, 0.18, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}
         />
       ) : null}
+      {cues.map(([name, at, volume]) =>
+        files.has(`audio/${name}.wav`) ? (
+          <Sequence key={`${name}-${at}`} from={at} durationInFrames={60} layout="none">
+            <Audio src={staticFile(`audio/${name}.wav`)} volume={volume} />
+          </Sequence>
+        ) : null,
+      )}
     </AbsoluteFill>
   );
 }

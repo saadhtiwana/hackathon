@@ -4,7 +4,7 @@ import { Avatar, Cursor, Frame, Mono, Pill, Ring } from "../ui/kit";
 import { Icon } from "../ui/icons";
 import { prog } from "../ui/motion";
 
-const reply = "Hi Hamza, yes it is. I've booked you a viewing for Thursday at 4 pm. See you there. Imran, Margalla Estates";
+const reply = "Hi Hamza, yes it is. I've booked you a viewing for Thursday at 4 pm. See you there. Malik Saad Hayat, Margalla Estates";
 
 // 21–26s: one click to own it, the reply lands in the customer's thread, the viewing lands on the calendar.
 export function Acknowledge() {
@@ -28,7 +28,7 @@ export function Acknowledge() {
           <Avatar name="Hamza Raza" size={64} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.02em" }}>Hamza Raza</div>
-            <div style={{ fontSize: 20, color: c.muted }}>Escalated to you · level 2</div>
+            <div style={{ fontSize: 20, color: c.muted }}>Escalated to Malik Saad Hayat · level 2</div>
           </div>
           {done ? (
             <Pill bg={c.greenTint} fg={c.green} size={19} style={{ transform: `scale(${0.8 + 0.2 * prog(frame, click, click + 8)})` }}>
@@ -80,7 +80,7 @@ export function Acknowledge() {
             {reply.slice(0, typed)}
             <span style={{ opacity: typed < reply.length && frame % 14 < 8 ? 1 : 0 }}>|</span>
           </div>
-          <Avatar name="Imran Qureshi" size={40} tone={3} />
+          <Avatar name="Malik Saad Hayat" size={40} tone={3} />
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 10, opacity: prog(frame, 92, 98) }}>
           <Mono size={16}>sent from Relay · delivered</Mono>

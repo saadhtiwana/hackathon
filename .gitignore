@@ -53,3 +53,8 @@ CLAUDE.md
 .claude/
 .cursor/
 .secrets/
+
+# launch video: renders, and screenshots of the live app (they show people's names and data)
+/video/out/
+/video/public/shots/
+/video/node_modules/

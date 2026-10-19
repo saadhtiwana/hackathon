@@ -141,7 +141,7 @@ The API reference, schema and module guide are in [docs/](docs/).
 - Malik Saad Hayat ([@saadhtiwana](https://github.com/saadhtiwana))
 - Ahmed Butt ([@ahmadmustafa02](https://github.com/ahmadmustafa02))
 
-Built in 24 hours at NASCON 2026 — placed 6th of 31 teams.
+Built in 24 hours at NASCON 2026
 
 ## Licence
 

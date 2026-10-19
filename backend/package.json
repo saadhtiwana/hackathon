@@ -13,6 +13,7 @@
     "migrate": "tsx src/core/db/migrate.ts",
     "generate": "drizzle-kit generate",
     "seed": "tsx src/core/db/seed.ts",
+    "rotate:passwords": "tsx scripts/rotate-passwords.ts",
     "connect:stripe": "tsx src/scripts/connect-stripe.ts",
     "connect:discord": "tsx src/scripts/connect-discord.ts",
     "link:google": "tsx src/scripts/google-links.ts",

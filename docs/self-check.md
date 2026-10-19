@@ -8,12 +8,12 @@ Every item below was checked on the live app. "works" means exercised on the liv
 |---|---|
 | Live app | https://relay-nascon.vercel.app |
 | API | https://relay-api-s6yw.onrender.com (health: /health) |
-| Owner | saadhayat799@gmail.com |
-| Admin | abdullahisdev@gmail.com |
-| User (values hidden) | ahmadmustafabutt.dev@gmail.com |
-| Other workspace (isolation) | sana@kohsarsolar.pk |
-| Password for all four | g1Z752U5UWSN |
-| Customer email address | ahmadmustafabutt.dev+margalla@gmail.com |
+| Owner | saad@example.com |
+| Admin | abdullah@example.com |
+| User (values hidden) | ahmed@example.com |
+| Other workspace (isolation) | sana@example.org |
+| Password for all four | the `SEED_PASSWORD` you set in your own env |
+| Customer email address | customer@example.com |
 | Public enquiry form | https://relay-nascon.vercel.app/f/margalla-estates |
 | Stripe test card | 4242 4242 4242 4242, any future date, any CVC |
 | Repo | https://github.com/saadhtiwana/hackathon |
@@ -21,7 +21,7 @@ Every item below was checked on the live app. "works" means exercised on the liv
 ## 1. Roles, permissions, security
 
 - **1a works.** Sign in as the Owner, Settings, Team and roles. Invite someone (an email goes out; pending invites have Resend and Revoke, and the link is copied as a fallback), change a member's role, open a custom role and tick or untick permissions. Every change appears in Settings, Audit log.
-- **1b works.** Sign in as the User (ahmadmustafabutt.dev@gmail.com, role User): Pipeline, Contacts, opportunity pages, Dashboard and the CSV export (403) show no values, and `GET /api/opportunities` has no valueCents. Audit log and settings return 403 and the dashboard shows personal figures.
+- **1b works.** Sign in as the User (ahmed@example.com, role User): Pipeline, Contacts, opportunity pages, Dashboard and the CSV export (403) show no values, and `GET /api/opportunities` has no valueCents. Audit log and settings return 403 and the dashboard shows personal figures.
 - **1c works.** As the User, `DELETE /api/contacts/<id>` returns 403. Using a Kohsar Solar contact id while signed in to Margalla returns 404.
 
 ## 2. Customizable CRM
